@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>M-Board — Australian Spatial Intelligence Portal | Urbane Real Estate</title>
+  <meta name="description" content="M-Board: hybrid 3D globe and planning GIS for Australia — zoning, cadastre, environment, demographics, and site intelligence.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/m-board.css">
+</head>
+<body class="mboard-app">
+  <div id="map2d" class="mboard-map" aria-label="2D map view"></div>
+  <div id="cesiumContainer" class="mboard-map mboard-map--hidden" aria-label="3D globe view"></div>
+
+  <header class="mboard-header">
+    <div class="mboard-brand">
+      <a href="index.html" class="mboard-exit" title="Back to agency site">←</a>
+      <div class="mboard-logo">
+        <span class="mboard-logo-mark">M</span>
+        <div>
+          <strong>M-Board</strong>
+          <span>Australian Spatial Intelligence</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mboard-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="search" id="geoSearch" placeholder="Search address, suburb, lot, or coordinates…" autocomplete="off" aria-label="Geographic search">
+      <div id="searchResults" class="mboard-search-results" hidden></div>
+    </div>
+
+    <div class="mboard-header-actions">
+      <div class="mboard-view-toggle" role="group" aria-label="View mode">
+        <button type="button" class="active" data-view="2d" title="2D planning map">2D</button>
+        <button type="button" data-view="3d" title="3D globe (Google Earth)">3D</button>
+        <button type="button" data-view="split" title="Split view">Split</button>
+      </div>
+      <button type="button" class="mboard-btn mboard-btn--ghost" id="btnScreenshot" title="Capture map screenshot">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+        Capture
+      </button>
+      <button type="button" class="mboard-btn mboard-btn--primary" id="btnSiteReport">
+        Site Report
+      </button>
+    </div>
+  </header>
+
+  <aside class="mboard-sidebar mboard-sidebar--left" id="layersPanel">
+    <div class="mboard-panel-header">
+      <h2>Data Layers</h2>
+      <button type="button" class="mboard-icon-btn" id="collapseLayers" aria-label="Collapse layers panel">‹</button>
+    </div>
+    <div class="mboard-panel-body">
+      <div class="mboard-basemap-picker">
+        <label for="basemapSelect">Basemap</label>
+        <select id="basemapSelect" aria-label="Basemap style">
+          <option value="satellite">Satellite Imagery</option>
+          <option value="hybrid">Hybrid (Satellite + Labels)</option>
+          <option value="streets">Street Map</option>
+          <option value="topo">Topographic</option>
+          <option value="dark">Dark Theme</option>
+          <option value="light">Light Theme</option>
+        </select>
+      </div>
+
+      <div class="mboard-jurisdiction">
+        <label for="jurisdictionSelect">Jurisdiction</label>
+        <select id="jurisdictionSelect" aria-label="State or territory">
+          <option value="NSW">New South Wales</option>
+          <option value="VIC">Victoria</option>
+          <option value="QLD">Queensland</option>
+          <option value="WA">Western Australia</option>
+          <option value="SA">South Australia</option>
+          <option value="TAS">Tasmania</option>
+          <option value="ACT">Australian Capital Territory</option>
+          <option value="NT">Northern Territory</option>
+        </select>
+      </div>
+
+      <div id="layerTree" class="mboard-layer-tree" role="tree" aria-label="Map layers"></div>
+
+      <div class="mboard-opacity-control">
+        <label for="layerOpacity">Active layer opacity</label>
+        <input type="range" id="layerOpacity" min="0" max="100" value="65">
+      </div>
+    </div>
+  </aside>
+
+  <aside class="mboard-toolbar" aria-label="Drawing and measurement tools">
+    <button type="button" class="mboard-tool active" data-tool="inspect" title="Inspect site">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    </button>
+    <button type="button" class="mboard-tool" data-tool="measure-line" title="Measure distance">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 4 18 3-9h6"/></svg>
+    </button>
+    <button type="button" class="mboard-tool" data-tool="measure-area" title="Measure area">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+    </button>
+    <button type="button" class="mboard-tool" data-tool="draw-polygon" title="Draw study area">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 18 20 6 20 2 8.5"/></svg>
+    </button>
+    <button type="button" class="mboard-tool" data-tool="draw-radius" title="Radius buffer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+    <button type="button" class="mboard-tool" data-tool="clear" title="Clear drawings">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+    </button>
+  </aside>
+
+  <aside class="mboard-sidebar mboard-sidebar--right" id="sitePanel">
+    <div class="mboard-panel-header">
+      <h2 id="sitePanelTitle">Site Intelligence</h2>
+      <button type="button" class="mboard-icon-btn" id="collapseSite" aria-label="Collapse site panel">›</button>
+    </div>
+    <div class="mboard-panel-body" id="sitePanelBody">
+      <div class="mboard-site-empty">
+        <div class="mboard-site-empty-icon">📍</div>
+        <p>Click any location on the map to view planning controls, cadastre, environmental constraints, and demographic data.</p>
+        <p class="mboard-hint">Inspired by <a href="https://meconemosaic.au/" target="_blank" rel="noopener">Mecone Mosaic</a> planning analytics with Google Earth–style 3D exploration.</p>
+      </div>
+    </div>
+  </aside>
+
+  <footer class="mboard-footer">
+    <div class="mboard-coords" id="coordsDisplay">—</div>
+    <div class="mboard-scale" id="scaleDisplay">—</div>
+    <div class="mboard-attribution">
+      Open data · ABS · State planning portals · Esri · OSM · Cesium
+    </div>
+    <div class="mboard-footer-links">
+      <a href="research.html">Research Hub</a>
+      <span>·</span>
+      <button type="button" id="btnWorkbench">Workbench</button>
+      <span>·</span>
+      <button type="button" id="btnHelp">Help</button>
+    </div>
+  </footer>
+
+  <div class="mboard-quick-nav" aria-label="Quick fly-to locations">
+    <button type="button" data-fly="-33.7689,150.9069,14" title="Blacktown">Blacktown</button>
+    <button type="button" data-fly="-33.8688,151.2093,12" title="Sydney CBD">Sydney</button>
+    <button type="button" data-fly="-33.4250,149.5780,8" title="NSW overview">NSW</button>
+    <button type="button" data-fly="-25.2744,133.7751,5" title="Australia">Australia</button>
+  </div>
+
+  <div class="mboard-modal" id="workbenchModal" hidden>
+    <div class="mboard-modal-backdrop" data-close-modal></div>
+    <div class="mboard-modal-content" role="dialog" aria-labelledby="workbenchTitle">
+      <header class="mboard-modal-header">
+        <h3 id="workbenchTitle">M-Board Workbench</h3>
+        <button type="button" class="mboard-icon-btn" data-close-modal aria-label="Close">×</button>
+      </header>
+      <div class="mboard-modal-body">
+        <p>Upload GeoJSON or KML spatial files to overlay custom study areas, development sites, or constraints analysis.</p>
+        <label class="mboard-upload">
+          <input type="file" id="workbenchUpload" accept=".geojson,.json,.kml,.kmz">
+          <span>Drop file or click to upload</span>
+        </label>
+        <div id="workbenchLayers" class="mboard-workbench-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mboard-modal" id="helpModal" hidden>
+    <div class="mboard-modal-backdrop" data-close-modal></div>
+    <div class="mboard-modal-content mboard-modal-content--wide" role="dialog" aria-labelledby="helpTitle">
+      <header class="mboard-modal-header">
+        <h3 id="helpTitle">M-Board Guide</h3>
+        <button type="button" class="mboard-icon-btn" data-close-modal aria-label="Close">×</button>
+      </header>
+      <div class="mboard-modal-body mboard-help">
+        <div class="mboard-help-grid">
+          <div>
+            <h4>Navigation</h4>
+            <ul>
+              <li><strong>2D:</strong> Pan (drag), zoom (scroll), rotate (right-drag or Ctrl+drag)</li>
+              <li><strong>3D:</strong> Tilt and orbit like Google Earth — scroll to zoom, drag to pan, right-drag to rotate</li>
+              <li><strong>Split:</strong> Compare planning layers (2D) with terrain globe (3D)</li>
+            </ul>
+          </div>
+          <div>
+            <h4>Planning Layers</h4>
+            <ul>
+              <li>Land zoning, FSR, building heights, minimum lot size</li>
+              <li>Heritage items &amp; conservation areas</li>
+              <li>Flood, bushfire, biodiversity &amp; contamination constraints</li>
+              <li>ABS demographics, transport &amp; employment data</li>
+            </ul>
+          </div>
+          <div>
+            <h4>Tools</h4>
+            <ul>
+              <li><strong>Inspect:</strong> Click a site for property-level intelligence</li>
+              <li><strong>Measure:</strong> Distance and area with metric units</li>
+              <li><strong>Draw:</strong> Study areas and radius buffers</li>
+              <li><strong>Site Report:</strong> Export PDF snapshot of current view &amp; data</li>
+            </ul>
+          </div>
+          <div>
+            <h4>Data Sources</h4>
+            <ul>
+              <li>NSW Planning Portal, VicPlan, QLD Globe, WA SLIP</li>
+              <li>Australian Bureau of Statistics (ABS)</li>
+              <li>OpenStreetMap, Esri World Imagery</li>
+              <li>Sample cadastre &amp; zoning for demonstration</li>
+            </ul>
+          </div>
+        </div>
+        <p class="mboard-disclaimer">M-Board integrates open government data and demonstration layers. For authoritative planning determinations, consult your local council and certified planners. Inspired by <a href="https://meconemosaic.au/" target="_blank" rel="noopener">Mecone Mosaic</a>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mboard-toast" id="toast" hidden></div>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.1.0/turf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cesium@1.122/Build/Cesium/Cesium.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/cesium@1.122/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script src="js/m-board-config.js"></script>
+  <script src="js/m-board-data.js"></script>
+  <script src="js/m-board.js"></script>
+</body>
+</html>
