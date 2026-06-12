@@ -3,3 +3,12 @@ Thumbs.db
 *.log
 .env
 .env.*
+
+# Error bot runtime (scripts are committed)
+.cursor/error-bot/loop.pid
+.cursor/error-bot/loop.out
+.cursor/error-bot/runs.log
+.cursor/error-bot/backup.log
+.cursor/error-bot/latest-report.json
+.cursor/error-bot/pending-bugs.md
+.cursor/error-bot/state.json
