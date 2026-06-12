@@ -154,11 +154,12 @@ const MBOARD_DATA = (() => {
     ]
   };
 
+  const incomeValues = [72000, 68000, 95000, 61000];
   const income = {
     type: 'FeatureCollection',
-    features: population.features.map(f => ({
+    features: population.features.map((f, i) => ({
       ...f,
-      properties: { ...f.properties, median_income: 65000 + Math.floor(Math.random() * 40000), label: '$' + (65 + Math.floor(Math.random() * 40)) + 'k' }
+      properties: { ...f.properties, median_income: incomeValues[i], label: '$' + (incomeValues[i] / 1000) + 'k' }
     }))
   };
 
