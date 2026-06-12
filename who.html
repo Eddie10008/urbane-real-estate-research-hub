@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Who — Urbane Real Estate Team</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo"><span class="logo-icon">U</span> Urbane Research Hub</a>
+      <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
+      <nav class="main-nav"><ul>
+        <li><a href="index.html">Home</a></li><li><a href="what.html">What</a></li><li><a href="who.html">Who</a></li>
+        <li><a href="owners.html">Owners</a></li><li><a href="financials.html">Financials</a></li>
+        <li><a href="connections.html">Network</a></li><li><a href="competition.html">Competition</a></li><li><a href="legal.html">Legal</a></li>
+      </ul></nav>
+    </div>
+  </header>
+  <main class="container">
+    <header class="page-header fade-in">
+      <div class="breadcrumb"><a href="index.html">Home</a> / Who</div>
+      <h1>Who — The Urbane Team</h1>
+      <p class="lead">Leadership, sales agents, property managers, and support staff powering Urbane Real Estate's operations.</p>
+    </header>
+
+    <section class="content-section fade-in">
+      <h2>Leadership</h2>
+      <div class="team-grid" id="leadershipGrid"></div>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Full Team Roster</h2>
+      <div class="team-grid" id="teamGrid"></div>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Team Structure</h2>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <tr><th>Department</th><th>Headcount</th><th>Key Functions</th></tr>
+          <tr><td>Leadership / Sales</td><td>2</td><td>Bishal Pokhrel (Principal), Umang Pokharel (Owner/Director)</td></tr>
+          <tr><td>Sales Team</td><td>6+</td><td>Gouthamb, Pawan, Naren, Biswash, Sunita, Charles, Shyaron</td></tr>
+          <tr><td>Property Management</td><td>1+</td><td>Ana Khademi (Property Manager)</td></tr>
+          <tr><td>Rentals Department</td><td>3+</td><td>Shubhra Neupane, Manish Rana, Yagana Khademi</td></tr>
+        </table>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="container"><p><a href="index.html">← Back to Research Hub</a> · <a href="owners.html">Owner Investigation →</a></p></div></footer>
+  <script src="js/data.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      function renderPerson(p, container) {
+        const initials = p.name.split(' ').map(n => n[0]).join('').slice(0, 2);
+        container.innerHTML += `<div class="team-card fade-in"><div class="team-avatar">${initials}</div><h4>${p.name}</h4><div class="role">${p.role}</div><div class="contact">${p.email || ''}<br>${p.mobile || ''}</div></div>`;
+      }
+      const lead = document.getElementById('leadershipGrid');
+      const team = document.getElementById('teamGrid');
+      if (typeof URBANE_DATA !== 'undefined') {
+        URBANE_DATA.principals.forEach(p => renderPerson(p, lead));
+        URBANE_DATA.team.forEach(p => renderPerson(p, team));
+      }
+    });
+  </script>
+  <script src="js/main.js"></script>
+</body>
+</html>

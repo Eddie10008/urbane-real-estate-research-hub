@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>6 Degrees of Connection — Urbane Real Estate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo"><span class="logo-icon">U</span> Urbane Research Hub</a>
+      <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
+      <nav class="main-nav"><ul>
+        <li><a href="index.html">Home</a></li><li><a href="what.html">What</a></li><li><a href="who.html">Who</a></li>
+        <li><a href="owners.html">Owners</a></li><li><a href="financials.html">Financials</a></li>
+        <li><a href="connections.html">Network</a></li><li><a href="competition.html">Competition</a></li><li><a href="legal.html">Legal</a></li>
+      </ul></nav>
+    </div>
+  </header>
+  <main class="container">
+    <header class="page-header fade-in">
+      <div class="breadcrumb"><a href="index.html">Home</a> / 6 Degrees of Connection</div>
+      <h1>Network & Connections</h1>
+      <p class="lead">Mapping Urbane Real Estate's professional ecosystem — partners, colleagues, vendors, clients, and competitors.</p>
+    </header>
+
+    <section class="content-section fade-in">
+      <h2>Interactive Network Map</h2>
+      <div class="network-container" id="networkGraph"></div>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Search Connections</h2>
+      <input type="text" class="search-bar" id="connectionSearch" placeholder="Filter connections…" aria-label="Search connections">
+      <div id="connectionList"></div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="container"><p><a href="index.html">← Back to Research Hub</a></p></div></footer>
+  <script src="js/data.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const list = document.getElementById('connectionList');
+      if (!list || typeof URBANE_DATA === 'undefined') return;
+      const labels = {
+        businessPartners: 'Business Partners',
+        colleagues: 'Colleagues',
+        employees: 'Employees',
+        vendors: 'Vendors & Platforms',
+        suppliers: 'Suppliers',
+        clients: 'Clients & Customers',
+        competitors: 'Competitors',
+        builders: 'Builders & Developers',
+        agents: 'Licensed Agents',
+        lawyers: 'Legal & Conveyancing'
+      };
+      Object.entries(URBANE_DATA.connections).forEach(([key, items]) => {
+        list.innerHTML += `<div class="content-section connection-item fade-in"><h3>${labels[key] || key}</h3><div>${items.map(i => `<span class="tag">${i}</span>`).join('')}</div></div>`;
+      });
+    });
+  </script>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Property Sales — Urbane Real Estate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo"><span class="logo-icon">U</span> Urbane Research Hub</a>
+      <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
+      <nav class="main-nav"><ul>
+        <li><a href="index.html">Home</a></li><li><a href="what.html">What</a></li><li><a href="who.html">Who</a></li>
+        <li><a href="owners.html">Owners</a></li><li><a href="financials.html">Financials</a></li>
+        <li><a href="connections.html">Network</a></li><li><a href="competition.html">Competition</a></li><li><a href="legal.html">Legal</a></li>
+      </ul></nav>
+    </div>
+  </header>
+  <main class="container">
+    <header class="page-header fade-in">
+      <div class="breadcrumb"><a href="index.html">Home</a> / Property Sales & Rentals</div>
+      <h1>Property Sales & Rental Areas</h1>
+      <p class="lead">Sales volumes, price ranges, property types, and geographic distribution of Urbane's portfolio.</p>
+    </header>
+
+    <section class="content-section fade-in">
+      <h2>Portfolio Overview</h2>
+      <div class="hero-stats">
+        <div class="stat-card"><div class="stat-value" data-count="273" data-suffix="+">0</div><div class="stat-label">Total Sold (Realty)</div></div>
+        <div class="stat-card"><div class="stat-value" data-count="21">0</div><div class="stat-label">Currently For Sale</div></div>
+        <div class="stat-card"><div class="stat-value" data-count="13">0</div><div class="stat-label">Currently For Rent</div></div>
+        <div class="stat-card"><div class="stat-value" data-count="865" data-prefix="$" data-suffix="K">0</div><div class="stat-label">Avg Sale Price</div></div>
+      </div>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Price Ranges (Current & Recent Listings)</h2>
+      <div style="margin: 1rem 0;" id="priceTags"></div>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Property Type Distribution</h2>
+      <div class="chart-container"><canvas id="propertyTypeChart"></canvas></div>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Bishal Pokhrel's 12-month sales breakdown (Realty.com.au): 10 apartments, 9 houses, 8 townhouses.</p>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Featured Listings (from urbanere.com.au)</h2>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <tr><th>Property</th><th>Price</th><th>Details</th></tr>
+          <tr><td>13/18 Marcia Street, Toongabbie</td><td>$900/week</td><td>4 bed, 2 bath, 2 car</td></tr>
+          <tr><td>29 Marcia Street, Toongabbie</td><td>$1.04M – $1.08M</td><td>4 bed, 2 bath, 1 car</td></tr>
+          <tr><td>1/29 Marcia Street, Toongabbie</td><td>$1.04M – $1.08M</td><td>4 bed, 1 bath, 2 car, 422sqm</td></tr>
+          <tr><td>13/8 Marlborough Road, Homebush West</td><td>$569K – $609K</td><td>2 bed, 2 bath, 1 car</td></tr>
+          <tr><td>30/1B Derby Street, Kingswood</td><td>$840K – $870K</td><td>3 bed, 2 bath, 2 car</td></tr>
+          <tr><td>20 Tiffany Place, Rooty Hill</td><td>$870K – $900K</td><td>4 bed, 1 bath, 2 car</td></tr>
+          <tr><td>25 Grantham Street, Grantham Farm</td><td>$600K – $630K</td><td>5 bed, 2 bath, 2 car</td></tr>
+          <tr><td>4508/57-59 Queen Street</td><td>Contact Agent</td><td>3 bed, 2 bath, 2 car</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Rental Portfolio</h2>
+      <p>Weekly rental listings range from <strong>$580/week</strong> (2 bed) to <strong>$900/week</strong> (4–5 bed family homes). The Urbane Rentals Team (rentals@urbanere.com.au) manages tenant placements across Western Sydney.</p>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <tr><th>Rental</th><th>Weekly Rent</th><th>Details</th></tr>
+          <tr><td>Various 2-bed units</td><td>$580 – $700/week</td><td>Entry-level rentals</td></tr>
+          <tr><td>3-bed houses/townhouses</td><td>$660 – $780/week</td><td>Family rentals</td></tr>
+          <tr><td>4-5 bed family homes</td><td>$800 – $900/week</td><td>Premium rentals</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Top Sales Suburbs</h2>
+      <div class="chart-container"><canvas id="suburbChart"></canvas></div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="container"><p><a href="index.html">← Back to Research Hub</a></p></div></footer>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="js/data.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('priceTags');
+      if (container && typeof URBANE_DATA !== 'undefined') {
+        URBANE_DATA.propertyTypes.priceRanges.forEach(p => {
+          const tag = document.createElement('span');
+          tag.className = 'tag accent';
+          tag.textContent = p;
+          container.appendChild(tag);
+        });
+      }
+    });
+  </script>
+  <script src="js/main.js"></script>
+</body>
+</html>

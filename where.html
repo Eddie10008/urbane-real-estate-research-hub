@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Where — Urbane Real Estate Research</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo"><span class="logo-icon">U</span> Urbane Research Hub</a>
+      <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
+      <nav class="main-nav"><ul>
+        <li><a href="index.html">Home</a></li><li><a href="what.html">What</a></li><li><a href="who.html">Who</a></li>
+        <li><a href="owners.html">Owners</a></li><li><a href="financials.html">Financials</a></li>
+        <li><a href="connections.html">Network</a></li><li><a href="competition.html">Competition</a></li><li><a href="legal.html">Legal</a></li>
+      </ul></nav>
+    </div>
+  </header>
+  <main class="container">
+    <header class="page-header fade-in">
+      <div class="breadcrumb"><a href="index.html">Home</a> / Where</div>
+      <h1>Where is Urbane Real Estate?</h1>
+      <p class="lead">Headquartered in Blacktown NSW 2148, with a service footprint spanning 58+ suburbs across Greater Western Sydney, Parramatta, and the Central Coast fringe.</p>
+    </header>
+
+    <section class="content-section fade-in">
+      <h2>Primary Office</h2>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <tr><th>Street Address</th><td>9/18 Third Avenue, Blacktown NSW 2148</td></tr>
+          <tr><th>Postal Address</th><td>PO Box 4365, Marayong NSW 2148</td></tr>
+          <tr><th>Phone</th><td>02 8809 5822</td></tr>
+          <tr><th>Email</th><td>info@urbanere.com.au</td></tr>
+          <tr><th>ABR Postcode Areas</th><td>Arndell Park, Blacktown, Blacktown Westpoint, Huntingwood, Kings Park, Marayong, Prospect</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Geographic Reach</h2>
+      <p>Urbane's website property search covers the following suburbs — indicating their active sales and rental markets:</p>
+      <div id="suburbTags" style="margin: 1.5rem 0;"></div>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Key Sales Corridors</h2>
+      <div class="chart-container"><canvas id="suburbChart"></canvas></div>
+      <p>Based on listing concentration and agent market profiles (Domain, Realty.com.au, Soho):</p>
+      <ul>
+        <li><strong>Blacktown LGA core:</strong> Blacktown, Marayong, Doonside, Rooty Hill, Mount Druitt, Seven Hills</li>
+        <li><strong>Parramatta corridor:</strong> Auburn, Merrylands, Granville, Wentworthville, Harris Park, Westmead</li>
+        <li><strong>Growth corridors:</strong> Marsden Park, Schofields, Grantham Farm, Jordan Springs, Box Hill</li>
+        <li><strong>Penrith/Western:</strong> Werrington, Kingswood, Penrith, St Marys, St Clair</li>
+        <li><strong>Inner West fringe:</strong> Homebush, Homebush West, Strathfield area listings</li>
+      </ul>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Map Reference</h2>
+      <div class="info-box">
+        <strong>Blacktown CBD</strong> is approximately 34 km west of Sydney CBD. The office at Third Avenue sits within the Blacktown commercial precinct, competing directly with agencies on Main Street and Flushcombe Road.
+        <br><br>
+        <a href="https://www.google.com/maps/search/9/18+Third+Avenue+Blacktown+NSW+2148" target="_blank" rel="noopener">View on Google Maps →</a>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="container"><p><a href="index.html">← Back to Research Hub</a></p></div></footer>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="js/data.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('suburbTags');
+      if (container && typeof URBANE_DATA !== 'undefined') {
+        URBANE_DATA.suburbs.forEach(s => {
+          const tag = document.createElement('span');
+          tag.className = 'tag';
+          tag.textContent = s;
+          container.appendChild(tag);
+        });
+      }
+    });
+  </script>
+  <script src="js/main.js"></script>
+</body>
+</html>

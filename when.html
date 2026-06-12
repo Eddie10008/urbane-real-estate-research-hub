@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>When — Urbane Real Estate Research</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo"><span class="logo-icon">U</span> Urbane Research Hub</a>
+      <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
+      <nav class="main-nav"><ul>
+        <li><a href="index.html">Home</a></li><li><a href="what.html">What</a></li><li><a href="who.html">Who</a></li>
+        <li><a href="owners.html">Owners</a></li><li><a href="financials.html">Financials</a></li>
+        <li><a href="connections.html">Network</a></li><li><a href="competition.html">Competition</a></li><li><a href="legal.html">Legal</a></li>
+      </ul></nav>
+    </div>
+  </header>
+  <main class="container">
+    <header class="page-header fade-in">
+      <div class="breadcrumb"><a href="index.html">Home</a> / When</div>
+      <h1>When — Timeline & Key Dates</h1>
+      <p class="lead">From pre-incorporation agent experience to a 6-year trading history with 273+ recorded sales.</p>
+    </header>
+
+    <section class="content-section fade-in">
+      <h2>Company Timeline</h2>
+      <div class="timeline" id="timelineContainer"></div>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Registration Dates</h2>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <tr><th>ABN Registration</th><td>1 March 2020</td></tr>
+          <tr><th>ABN Last Updated</th><td>27 May 2020</td></tr>
+          <tr><th>GST Registration</th><td>1 May 2020</td></tr>
+          <tr><th>Company Status</th><td>Active (as of June 2026)</td></tr>
+          <tr><th>Years Trading</th><td>~6 years</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Market Activity (Recent 12 Months)</h2>
+      <div class="hero-stats">
+        <div class="stat-card"><div class="stat-value" data-count="46">0</div><div class="stat-label">Properties Sold</div></div>
+        <div class="stat-card"><div class="stat-value" data-count="116">0</div><div class="stat-label">Properties Leased</div></div>
+        <div class="stat-card"><div class="stat-value" data-count="21">0</div><div class="stat-label">Currently For Sale</div></div>
+        <div class="stat-card"><div class="stat-value" data-count="13">0</div><div class="stat-label">Currently For Rent</div></div>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 1rem;">Source: Domain.com.au agency profile, 2025–2026 data.</p>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="container"><p><a href="index.html">← Back to Research Hub</a></p></div></footer>
+  <script src="js/data.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('timelineContainer');
+      if (container && typeof URBANE_DATA !== 'undefined') {
+        URBANE_DATA.timeline.forEach(item => {
+          container.innerHTML += `<div class="timeline-item fade-in"><div class="timeline-year">${item.year}</div><p>${item.event}</p></div>`;
+        });
+      }
+    });
+  </script>
+  <script src="js/main.js"></script>
+</body>
+</html>

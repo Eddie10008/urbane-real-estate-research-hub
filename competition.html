@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Competition — Urbane Real Estate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo"><span class="logo-icon">U</span> Urbane Research Hub</a>
+      <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
+      <nav class="main-nav"><ul>
+        <li><a href="index.html">Home</a></li><li><a href="what.html">What</a></li><li><a href="who.html">Who</a></li>
+        <li><a href="owners.html">Owners</a></li><li><a href="financials.html">Financials</a></li>
+        <li><a href="connections.html">Network</a></li><li><a href="competition.html">Competition</a></li><li><a href="legal.html">Legal</a></li>
+      </ul></nav>
+    </div>
+  </header>
+  <main class="container">
+    <header class="page-header fade-in">
+      <div class="breadcrumb"><a href="index.html">Home</a> / Competition</div>
+      <h1>Competitive Landscape</h1>
+      <p class="lead">Urbane Real Estate operates in one of Australia's most competitive real estate markets — 199+ agencies in Blacktown postcode alone.</p>
+    </header>
+
+    <section class="content-section fade-in">
+      <h2>Market Overview</h2>
+      <div class="info-box">
+        Blacktown NSW 2148 is a densely contested real estate market. National franchises, established independents, and boutique agencies all compete for sales and rental management across Western Sydney's diverse, high-growth suburbs.
+      </div>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Key Competitors</h2>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <tr><th>Agency</th><th>Location</th><th>Sales (12mo)</th><th>Leases (12mo)</th><th>Notes</th></tr>
+          <tr><td><strong>Urbane Real Estate</strong></td><td>9/18 Third Ave, Blacktown</td><td>46</td><td>116</td><td>Independent, locally owned, strong rentals</td></tr>
+          <tr><td>Ray White Blacktown City</td><td>34 Flushcombe Rd, Blacktown</td><td>80</td><td>86</td><td>$66.7M sales, $844K avg — market leader on sales</td></tr>
+          <tr><td>LJ Hooker Blacktown</td><td>61 Main St, Blacktown</td><td>~55</td><td>~70</td><td>30+ years established, Main St presence</td></tr>
+          <tr><td>Elders Real Estate Blacktown</td><td>1 Aldgate St, Prospect</td><td>~40</td><td>~45</td><td>16+ years, Principal Rufina Djo</td></tr>
+          <tr><td>Starr Partners Blacktown</td><td>Blacktown area</td><td>—</td><td>—</td><td>Major franchise network</td></tr>
+          <tr><td>McGrath Blacktown</td><td>Blacktown area</td><td>—</td><td>—</td><td>National brand, premium positioning</td></tr>
+          <tr><td>Laing+Simmons Blacktown</td><td>Blacktown area</td><td>—</td><td>—</td><td>Established franchise</td></tr>
+          <tr><td>Sky Property Blacktown</td><td>Blacktown area</td><td>—</td><td>—</td><td>Local independent competitor</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Competitive Comparison</h2>
+      <div class="chart-container"><canvas id="competitorChart"></canvas></div>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Urbane's Competitive Position</h2>
+      <div class="cards-grid">
+        <div class="topic-card"><h3>Strengths</h3><p>4.9★ Google (364 reviews), 116 leases/year (rental focus), multilingual team, growth corridor expertise, independent agility.</p></div>
+        <div class="topic-card"><h3>Weaknesses</h3><p>Lower sales volume than Ray White (46 vs 80), single office, less brand recognition than 30-year franchises.</p></div>
+        <div class="topic-card"><h3>Opportunities</h3><p>Western Sydney Aerotropolis growth, Marsden Park/Schofields development, Nepalese community market leadership.</p></div>
+        <div class="topic-card"><h3>Threats</h3><p>199+ competing agencies, rising interest rates, franchise marketing budgets, PropTech disruption.</p></div>
+      </div>
+    </section>
+
+    <section class="content-section fade-in">
+      <h2>Market Share Estimate</h2>
+      <p>With 46 sales in a market where the leading agency achieves 80, Urbane holds an estimated <strong>3–5% of Blacktown LGA residential sales</strong> by volume. Their rental management share (116 leases) may be proportionally higher, suggesting stronger positioning in property management than pure sales.</p>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="container"><p><a href="index.html">← Back to Research Hub</a></p></div></footer>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
