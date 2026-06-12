@@ -11,7 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initHeaderScroll() {
   const header = document.getElementById('siteHeader');
-  if (!header || !document.querySelector('.hero')) return;
+  if (!header || document.body.classList.contains('agency-site')) return;
+  if (!document.querySelector('.hero')) return;
 
   const onScroll = () => {
     header.classList.toggle('scrolled', window.scrollY > 48);
@@ -254,7 +255,8 @@ function initNetworkGraph() {
     const startAngle = (group.angle * Math.PI) / 180;
     const spread = Math.PI / 3;
 
-    items.slice(0, 4).forEach((name, i) => {
+    items.slice(0, 4).forEach((item, i) => {
+      const name = typeof item === 'string' ? item : (item.name || String(item));
       const angle = startAngle + (spread / Math.max(items.length - 1, 1)) * i - spread / 2;
       const x = cx + Math.cos(angle) * radius;
       const y = cy + Math.sin(angle) * radius;
