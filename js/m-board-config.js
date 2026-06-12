@@ -131,9 +131,9 @@ const MBOARD_CONFIG = {
       name: 'Cadastre Grid (Mecone Style)',
       color: '#10b981',
       layers: [
-        { id: 'lots', name: 'Lot Parcels (zone fill)', source: 'lots', type: 'fill', defaultOn: true, paint: { 'fill-opacity': 0.35 } },
-        { id: 'lot-grid', name: 'Cadastre Grid Lines', source: 'lot-grid', type: 'line', defaultOn: true, paint: { 'line-color': '#5eead4', 'line-width': 1.5 } },
-        { id: 'lot-labels', name: 'Lot Numbers', source: 'lot-labels', type: 'symbol', defaultOn: true },
+        { id: 'lots', name: 'Lot Parcels (cadastre fill)', source: 'lots', type: 'fill', defaultOn: true, paint: { 'fill-color': '#4ade80', 'fill-opacity': 0.06 } },
+        { id: 'lot-grid', name: 'Cadastre Grid Lines', source: 'lot-grid', type: 'line', defaultOn: true, paint: { 'line-color': '#4ade80', 'line-width': 1.2, 'line-opacity': 0.85 } },
+        { id: 'lot-labels', name: 'Lot / DP Labels', source: 'lot-labels', type: 'symbol', defaultOn: true, paint: { 'text-color': '#4ade80' } },
         { id: 'parcels', name: 'Legacy Parcel Boundaries', source: 'parcels', type: 'line', defaultOn: false, paint: { 'line-color': '#fbbf24', 'line-width': 1.2 } },
         { id: 'addresses', name: 'Property Addresses', source: 'addresses', type: 'circle', defaultOn: false, paint: { 'circle-radius': 4, 'circle-color': '#10b981' } },
         { id: 'listings', name: 'Urbane Listings', source: 'listings', type: 'circle', defaultOn: true, paint: { 'circle-radius': 7, 'circle-color': '#ef4444', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' } }

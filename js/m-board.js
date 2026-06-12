@@ -17,8 +17,10 @@
   let activeLayerId = 'lots';
   let viewMode = '2d';
   let selectedLotId = null;
+  let selectedLotProps = null;
   let lotHoverPopup = null;
   let hoveredLotId = null;
+  let lotPinMarker = null;
 
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
@@ -59,8 +61,11 @@
       document.body.classList.add('mboard-mosaic-mode');
       addAllLayers();
       map.on('mousemove', updateCoords);
-      map.on('move', updateScale);
+      map.on('move', () => { updateScale(); updateZoomDisplay(); });
+      map.on('zoom', updateZoomDisplay);
       updateScale();
+      updateZoomDisplay();
+      updateFooterInfo();
     });
 
     map.on('click', onMapClick);
@@ -114,30 +119,37 @@
     const paint = { ...getDefaultPaint(layerDef), ...layerDef.paint };
 
     if (type === 'fill') {
-      const fillOpacity = src === 'lots' ? 0.35 : (paint['fill-opacity'] ?? 0.45);
+      const isLots = src === 'lots';
+      const fillOpacity = isLots ? (paint['fill-opacity'] ?? 0.06) : (paint['fill-opacity'] ?? 0.45);
       map.addLayer({
         id,
         type: 'fill',
         source: src,
         layout: { visibility: layerDef.defaultOn ? 'visible' : 'none' },
         paint: {
-          'fill-color': paint['fill-color'] || ['match', ['get', 'zone'], ...zoneMatchArray(), config.zoneColors.default],
-          'fill-opacity': fillOpacity,
-          'fill-outline-color': src === 'lots' ? '#5eead480' : '#ffffff40'
+          'fill-color': isLots
+            ? (paint['fill-color'] || '#4ade80')
+            : (paint['fill-color'] || ['match', ['get', 'zone'], ...zoneMatchArray(), config.zoneColors.default]),
+          'fill-opacity': isLots
+            ? ['case', ['==', ['get', 'lot_id'], selectedLotId || ''], 0.35, 0.06]
+            : fillOpacity,
+          'fill-outline-color': isLots ? '#4ade80' : '#ffffff40'
         }
       });
-      map.addLayer({
-        id: id + '-label',
-        type: 'symbol',
-        source: src,
-        layout: {
-          visibility: layerDef.defaultOn ? 'visible' : 'none',
-          'text-field': ['coalesce', ['get', 'zone'], ['get', 'label'], ['get', 'name']],
-          'text-size': 11,
-          'text-anchor': 'center'
-        },
-        paint: { 'text-color': '#fff', 'text-halo-color': '#000', 'text-halo-width': 1 }
-      });
+      if (!isLots) {
+        map.addLayer({
+          id: id + '-label',
+          type: 'symbol',
+          source: src,
+          layout: {
+            visibility: layerDef.defaultOn ? 'visible' : 'none',
+            'text-field': ['coalesce', ['get', 'zone'], ['get', 'label'], ['get', 'name']],
+            'text-size': 11,
+            'text-anchor': 'center'
+          },
+          paint: { 'text-color': '#fff', 'text-halo-color': '#000', 'text-halo-width': 1 }
+        });
+      }
     } else if (type === 'line') {
       map.addLayer({
         id, type: 'line', source: src,
@@ -161,25 +173,54 @@
         }
       });
     } else if (type === 'symbol') {
+      const isLotLabels = src === 'lot-labels';
       map.addLayer({
         id, type: 'symbol', source: src,
-        minzoom: 14,
+        minzoom: isLotLabels ? 15 : 14,
         layout: {
           visibility: layerDef.defaultOn ? 'visible' : 'none',
           'text-field': ['get', 'label'],
-          'text-size': 10,
+          'text-size': isLotLabels ? ['interpolate', ['linear'], ['zoom'], 15, 8, 17, 10, 19, 12] : 10,
           'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
           'text-anchor': 'center',
-          'text-allow-overlap': false
+          'text-allow-overlap': isLotLabels,
+          'text-ignore-placement': isLotLabels
         },
         paint: {
-          'text-color': '#e2e8f0',
-          'text-halo-color': '#0a1628',
-          'text-halo-width': 1.5
+          'text-color': layerDef.paint?.['text-color'] || (isLotLabels ? '#4ade80' : '#e2e8f0'),
+          'text-halo-color': isLotLabels ? '#0a1628' : '#0a1628',
+          'text-halo-width': isLotLabels ? 1 : 1.5,
+          'text-opacity': isLotLabels ? ['interpolate', ['linear'], ['zoom'], 14.5, 0, 15, 0.9, 20, 1] : 1
         }
       });
     }
 
+  }
+
+  function createLotPinElement() {
+    const el = document.createElement('div');
+    el.className = 'mboard-lot-pin';
+    el.innerHTML = '<span class="mboard-lot-pin-dot"></span><span class="mboard-lot-pin-tail"></span>';
+    return el;
+  }
+
+  function placeLotPin(lng, lat, feature) {
+    if (!lotPinMarker) {
+      lotPinMarker = new maplibregl.Marker({ element: createLotPinElement(), anchor: 'bottom' });
+    }
+    if (feature?.geometry) {
+      const c = feature.geometry.coordinates[0];
+      const pinLng = (c[0][0] + c[2][0]) / 2;
+      const pinLat = (c[0][1] + c[2][1]) / 2;
+      lotPinMarker.setLngLat([pinLng, pinLat]).addTo(map);
+    } else {
+      lotPinMarker.setLngLat([lng, lat]).addTo(map);
+    }
+  }
+
+  function removeLotPin() {
+    lotPinMarker?.remove();
+    lotPinMarker = null;
   }
 
   function setupLotInteractions() {
@@ -190,13 +231,13 @@
       id: 'lot-selected-fill',
       type: 'fill',
       source: 'lot-selected',
-      paint: { 'fill-color': '#fbbf24', 'fill-opacity': 0.25 }
+      paint: { 'fill-color': '#86efac', 'fill-opacity': 0.45 }
     });
     map.addLayer({
       id: 'lot-selected-outline',
       type: 'line',
       source: 'lot-selected',
-      paint: { 'line-color': '#fbbf24', 'line-width': 3 }
+      paint: { 'line-color': '#4ade80', 'line-width': 3.5, 'line-opacity': 1 }
     });
 
     lotHoverPopup = new maplibregl.Popup({
@@ -213,11 +254,11 @@
       const p = f.properties;
       hoveredLotId = p.lot_id;
       lotHoverPopup.setLngLat(e.lngLat)
-        .setHTML(`<strong>Lot ${p.lot}</strong> · ${p.zone}<br><span class="muted">${p.lot_id}</span>${p.address ? '<br>' + p.address : ''}`)
+        .setHTML(`<strong>${p.lot_id}</strong> · ${p.zone}<br><span class="muted">${p.address || p.suburb || ''}</span>`)
         .addTo(map);
       map.setPaintProperty('lots', 'fill-opacity', [
-        'case', ['==', ['get', 'lot_id'], p.lot_id], 0.65,
-        ['==', ['get', 'lot_id'], selectedLotId || ''], 0.55, 0.35
+        'case', ['==', ['get', 'lot_id'], p.lot_id], 0.2,
+        ['==', ['get', 'lot_id'], selectedLotId || ''], 0.35, 0.06
       ]);
     });
 
@@ -238,29 +279,85 @@
       const f = e.features[0];
       selectLot(f.properties.lot_id, e.lngLat.lng, e.lngLat.lat, f);
     });
+
+    ['lot-grid', 'lot-labels'].forEach((layerId) => {
+      map.on('mouseenter', layerId, () => {
+        if (activeTool === 'inspect') map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', layerId, () => {
+        if (!hoveredLotId) map.getCanvas().style.cursor = '';
+      });
+      map.on('click', layerId, (e) => {
+        if (activeTool !== 'inspect') return;
+        e.originalEvent.stopPropagation();
+        const lotId = e.features[0].properties.lot_id;
+        const lotFeature = sourceMap.lots?.features?.find((f) => f.properties.lot_id === lotId);
+        if (lotFeature) selectLot(lotId, e.lngLat.lng, e.lngLat.lat, lotFeature);
+      });
+    });
   }
 
   function resetLotFillOpacity() {
     if (!map.getLayer('lots')) return;
     map.setPaintProperty('lots', 'fill-opacity', [
-      'case', ['==', ['get', 'lot_id'], selectedLotId || ''], 0.55, 0.35
+      'case', ['==', ['get', 'lot_id'], selectedLotId || ''], 0.35, 0.06
     ]);
+  }
+
+  function formatTitleRef(props) {
+    if (!props) return '—';
+    if (props.title_ref && props.title_ref.startsWith('TITLE')) return props.title_ref;
+    const dp = String(props.dp || '').replace(/^DP/i, 'DP');
+    return `TITLE ${props.lot}/${dp}`;
+  }
+
+  function updateFooterInfo(lng, lat, props) {
+    const p = props || selectedLotProps;
+    const center = map?.getCenter();
+    const displayLng = lng ?? center?.lng;
+    const displayLat = lat ?? center?.lat;
+
+    if (displayLat != null && displayLng != null) {
+      $('#coordsDisplay').textContent = `${displayLat.toFixed(5)}, ${displayLng.toFixed(5)}`;
+    }
+
+    if (p) {
+      const addr = p.address
+        ? `${p.address}${p.suburb ? ', ' + p.suburb.toUpperCase() : ''} NSW ${p.postcode || ''}`.trim()
+        : '—';
+      $('#addressDisplay').textContent = addr.toUpperCase();
+      $('#titleDisplay').textContent = formatTitleRef(p).toUpperCase();
+    } else if (!selectedLotId) {
+      $('#addressDisplay').textContent = '—';
+      $('#titleDisplay').textContent = '—';
+    }
+  }
+
+  function updateZoomDisplay() {
+    if (!map) return;
+    $('#zoomDisplay').textContent = map.getZoom().toFixed(2);
   }
 
   function selectLot(lotId, lng, lat, feature) {
     selectedLotId = lotId;
     const lotFeature = feature || sourceMap.lots?.features?.find((f) => f.properties.lot_id === lotId);
+    selectedLotProps = lotFeature?.properties || lotLookup[lotId] || null;
     if (lotFeature) {
       map.getSource('lot-selected')?.setData({ type: 'FeatureCollection', features: [lotFeature] });
+      placeLotPin(lng, lat, lotFeature);
     }
     resetLotFillOpacity();
-    showLotPanel(lotId, lng, lat, lotFeature?.properties || lotLookup[lotId]);
+    updateFooterInfo(lng, lat, selectedLotProps);
+    showLotPanel(lotId, lng, lat, selectedLotProps);
   }
 
   function clearLotSelection() {
     selectedLotId = null;
+    selectedLotProps = null;
     map.getSource('lot-selected')?.setData({ type: 'FeatureCollection', features: [] });
+    removeLotPin();
     resetLotFillOpacity();
+    updateFooterInfo();
   }
 
   function zoneMatchArray() {
@@ -373,7 +470,7 @@
     if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis);
     if (map.getLayer(id + '-label')) map.setLayoutProperty(id + '-label', 'visibility', vis);
     if (id === 'lots') {
-      ['lot-selected-fill', 'lot-selected-outline'].forEach((lid) => {
+      ['lot-selected-fill', 'lot-selected-outline', 'lot-grid', 'lot-labels'].forEach((lid) => {
         if (map.getLayer(lid)) map.setLayoutProperty(lid, 'visibility', vis);
       });
     }
@@ -395,6 +492,7 @@
     document.body.classList.toggle('mboard-mosaic-mode', key === 'mosaic');
     const style = JSON.parse(JSON.stringify(bm));
     addDataSourcesToStyle(style);
+    removeLotPin();
 
     const center = map.getCenter();
     const zoom = map.getZoom();
@@ -412,6 +510,15 @@
         });
       });
       setLayerOpacity($('#layerOpacity').value);
+      if (selectedLotId) {
+        const lotFeature = sourceMap.lots?.features?.find((f) => f.properties.lot_id === selectedLotId);
+        if (lotFeature) {
+          map.getSource('lot-selected')?.setData({ type: 'FeatureCollection', features: [lotFeature] });
+          placeLotPin(null, null, lotFeature);
+          resetLotFillOpacity();
+        }
+      }
+      updateZoomDisplay();
     });
   }
 
@@ -875,7 +982,7 @@
     const lotMatches = searchLots(query);
     if (lotMatches.length) {
       results.innerHTML = lotMatches.map((m) =>
-        `<button type="button" data-lot="${m.lot_id}" data-lng="${m.lng}" data-lat="${m.lat}">${m.address || 'Lot ' + m.lot}<small>${m.lot_id} · ${m.zone}</small></button>`
+        `<button type="button" data-lot="${m.lot_id}" data-lng="${m.lng}" data-lat="${m.lat}">${m.address || m.lot_id}<small>${m.lot_id} · ${m.zone}${m.suburb ? ' · ' + m.suburb : ''}</small></button>`
       ).join('');
       results.hidden = false;
       results.querySelectorAll('button[data-lot]').forEach((btn) => {
@@ -1048,7 +1155,8 @@
   /* ── UI helpers ───────────────────────────────────────── */
 
   function updateCoords(e) {
-    $('#coordsDisplay').textContent = `${e.lngLat.lat.toFixed(5)}°, ${e.lngLat.lng.toFixed(5)}°`;
+    $('#coordsDisplay').textContent = `${e.lngLat.lat.toFixed(5)}, ${e.lngLat.lng.toFixed(5)}`;
+    if (!selectedLotId) updateFooterInfo(e.lngLat.lng, e.lngLat.lat);
   }
 
   function updateScale() {
@@ -1080,6 +1188,15 @@
     $('#basemapSelect').addEventListener('change', (e) => setBasemap(e.target.value));
 
     $('#jurisdictionSelect').addEventListener('change', (e) => {
+      const footerJ = $('#footerJurisdiction');
+      if (footerJ) footerJ.value = e.target.value;
+      const j = config.jurisdictions[e.target.value];
+      if (j) flyTo(j.center[0], j.center[1], j.zoom);
+    });
+
+    $('#footerJurisdiction')?.addEventListener('change', (e) => {
+      const sidebarJ = $('#jurisdictionSelect');
+      if (sidebarJ) sidebarJ.value = e.target.value;
       const j = config.jurisdictions[e.target.value];
       if (j) flyTo(j.center[0], j.center[1], j.zoom);
     });

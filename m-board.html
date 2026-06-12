@@ -29,7 +29,7 @@
 
     <div class="mboard-search">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-      <input type="search" id="geoSearch" placeholder="Search lot, DP, address, or coordinates…" autocomplete="off" aria-label="Geographic search">
+      <input type="search" id="geoSearch" placeholder="Address / Suburb / Lot / DP…" autocomplete="off" aria-label="Geographic search">
       <div id="searchResults" class="mboard-search-results" hidden></div>
     </div>
 
@@ -127,10 +127,40 @@
   </aside>
 
   <footer class="mboard-footer">
-    <div class="mboard-coords" id="coordsDisplay">—</div>
-    <div class="mboard-scale" id="scaleDisplay">—</div>
+    <div class="mboard-footer-jurisdiction">
+      <label for="footerJurisdiction" class="sr-only">State</label>
+      <select id="footerJurisdiction" aria-label="State or territory">
+        <option value="NSW" selected>New South Wales</option>
+        <option value="VIC">Victoria</option>
+        <option value="QLD">Queensland</option>
+        <option value="WA">Western Australia</option>
+        <option value="SA">South Australia</option>
+        <option value="TAS">Tasmania</option>
+        <option value="ACT">Australian Capital Territory</option>
+        <option value="NT">Northern Territory</option>
+      </select>
+    </div>
+    <div class="mboard-footer-info">
+      <div class="mboard-footer-field">
+        <span class="mboard-footer-label">Position</span>
+        <span class="mboard-footer-value" id="coordsDisplay">—</span>
+      </div>
+      <div class="mboard-footer-field">
+        <span class="mboard-footer-label">Zoom</span>
+        <span class="mboard-footer-value" id="zoomDisplay">—</span>
+      </div>
+      <div class="mboard-footer-field mboard-footer-field--wide">
+        <span class="mboard-footer-label">Address</span>
+        <span class="mboard-footer-value" id="addressDisplay">—</span>
+      </div>
+      <div class="mboard-footer-field mboard-footer-field--wide">
+        <span class="mboard-footer-label">Title</span>
+        <span class="mboard-footer-value" id="titleDisplay">—</span>
+      </div>
+    </div>
+    <div class="mboard-scale" id="scaleDisplay" hidden>—</div>
     <div class="mboard-attribution">
-      Open data · ABS · State planning portals · Esri · OSM · Cesium
+      MapLibre · Esri · OSM · Cesium
     </div>
     <div class="mboard-footer-links">
       <a href="research.html">Research Hub</a>

@@ -51,7 +51,7 @@ const MBOARD_LOTS = (() => {
         dwelling_type: meta.dwelling_type || 'Dwelling house',
         strata: meta.strata || 'No',
         owner_type: meta.owner_type || 'Private',
-        title_ref: meta.title_ref || `Auto Consol 123456789 / ${meta.lot}`,
+        title_ref: meta.title_ref || `TITLE ${meta.lot}/${meta.dp}`,
         last_sale_date: meta.last_sale_date || null,
         last_sale_price: meta.last_sale_price || null,
         valuation_land: meta.valuation_land || null,
@@ -240,12 +240,17 @@ const MBOARD_LOTS = (() => {
       const c = f.geometry.coordinates[0];
       const lng = (c[0][0] + c[2][0]) / 2;
       const lat = (c[0][1] + c[2][1]) / 2;
+      const dpShort = String(f.properties.dp || '').replace(/^DP/i, 'DP');
+      const label = `${f.properties.lot}/${dpShort}`;
       return {
         type: 'Feature',
         properties: {
-          label: f.properties.lot,
+          label,
+          lot: f.properties.lot,
+          dp: f.properties.dp,
           lot_id: f.properties.lot_id,
-          zone: f.properties.zone
+          zone: f.properties.zone,
+          address: f.properties.address || ''
         },
         geometry: { type: 'Point', coordinates: [lng, lat] }
       };
