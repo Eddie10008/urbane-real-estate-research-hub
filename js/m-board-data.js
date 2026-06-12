@@ -344,8 +344,13 @@ const MBOARD_DATA = (() => {
     )
   };
 
+  const lots = typeof MBOARD_LOTS !== 'undefined' ? MBOARD_LOTS.lots : parcels;
+  const lotGrid = typeof MBOARD_LOTS !== 'undefined' ? MBOARD_LOTS.lotGrid : parcels;
+  const lotLabels = typeof MBOARD_LOTS !== 'undefined' ? MBOARD_LOTS.lotLabels : addresses;
+
   const sourceMap = {
     zoning, fsr, heights, 'lot-size': lotSize, heritage,
+    lots, 'lot-grid': lotGrid, 'lot-labels': lotLabels,
     parcels, addresses, listings,
     flood, bushfire, biodiversity, contamination,
     population, income, age, growth,
@@ -354,5 +359,9 @@ const MBOARD_DATA = (() => {
     lga, 'service-area': serviceArea, competitors
   };
 
-  return { sourceMap, zoning, parcels, listings, research: R };
+  return {
+    sourceMap, zoning, parcels, lots, listings, research: R,
+    lotLookup: typeof MBOARD_LOTS !== 'undefined' ? MBOARD_LOTS.lotLookup : {},
+    lotCount: typeof MBOARD_LOTS !== 'undefined' ? MBOARD_LOTS.count : parcels.features.length
+  };
 })();

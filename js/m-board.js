@@ -6,7 +6,7 @@
   'use strict';
 
   const config = MBOARD_CONFIG;
-  const { sourceMap, research: nswResearch } = MBOARD_DATA;
+  const { sourceMap, research: nswResearch, lotLookup } = MBOARD_DATA;
 
   let map = null;
   let cesiumViewer = null;
@@ -14,8 +14,11 @@
   let drawCoords = [];
   let measureMarkers = [];
   let workbenchLayers = [];
-  let activeLayerId = 'zoning';
+  let activeLayerId = 'lots';
   let viewMode = '2d';
+  let selectedLotId = null;
+  let lotHoverPopup = null;
+  let hoveredLotId = null;
 
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
@@ -28,11 +31,15 @@
     buildLayerTree();
     bindEvents();
     renderNswContextBanner();
-    showToast('M-Board ready — NSW planning layers loaded for Greater Western Sydney');
+    const hint = $('#lotGridHint');
+    if (hint && MBOARD_DATA.lotCount) {
+      hint.textContent = `Mecone Mosaic–style cadastre grid · ${MBOARD_DATA.lotCount} lots mapped in Blacktown CBD`;
+    }
+    showToast('M-Board ready — click any lot on the cadastre grid for premium intelligence');
   }
 
   function initMap2D() {
-    const style = JSON.parse(JSON.stringify(config.basemaps.satellite));
+    const style = JSON.parse(JSON.stringify(config.basemaps.mosaic || config.basemaps.satellite));
     addDataSourcesToStyle(style);
 
     map = new maplibregl.Map({
@@ -49,6 +56,7 @@
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
 
     map.on('load', () => {
+      document.body.classList.add('mboard-mosaic-mode');
       addAllLayers();
       map.on('mousemove', updateCoords);
       map.on('move', updateScale);
@@ -84,6 +92,8 @@
       showSitePanel(e.lngLat.lng, e.lngLat.lat, { address: p.address, listing: p });
     });
 
+    setupLotInteractions();
+
     ['stations', 'competitors', 'employment'].forEach((layerId) => {
       map.on('mouseenter', layerId, () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', layerId, () => { map.getCanvas().style.cursor = ''; });
@@ -104,6 +114,7 @@
     const paint = { ...getDefaultPaint(layerDef), ...layerDef.paint };
 
     if (type === 'fill') {
+      const fillOpacity = src === 'lots' ? 0.35 : (paint['fill-opacity'] ?? 0.45);
       map.addLayer({
         id,
         type: 'fill',
@@ -111,8 +122,8 @@
         layout: { visibility: layerDef.defaultOn ? 'visible' : 'none' },
         paint: {
           'fill-color': paint['fill-color'] || ['match', ['get', 'zone'], ...zoneMatchArray(), config.zoneColors.default],
-          'fill-opacity': paint['fill-opacity'] ?? 0.45,
-          'fill-outline-color': '#ffffff40'
+          'fill-opacity': fillOpacity,
+          'fill-outline-color': src === 'lots' ? '#5eead480' : '#ffffff40'
         }
       });
       map.addLayer({
@@ -149,7 +160,107 @@
           'circle-opacity': paint['circle-opacity'] ?? 0.9
         }
       });
+    } else if (type === 'symbol') {
+      map.addLayer({
+        id, type: 'symbol', source: src,
+        minzoom: 14,
+        layout: {
+          visibility: layerDef.defaultOn ? 'visible' : 'none',
+          'text-field': ['get', 'label'],
+          'text-size': 10,
+          'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
+          'text-anchor': 'center',
+          'text-allow-overlap': false
+        },
+        paint: {
+          'text-color': '#e2e8f0',
+          'text-halo-color': '#0a1628',
+          'text-halo-width': 1.5
+        }
+      });
     }
+
+  }
+
+  function setupLotInteractions() {
+    if (!map.getSource('lots') || map.getSource('lot-selected')) return;
+
+    map.addSource('lot-selected', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({
+      id: 'lot-selected-fill',
+      type: 'fill',
+      source: 'lot-selected',
+      paint: { 'fill-color': '#fbbf24', 'fill-opacity': 0.25 }
+    });
+    map.addLayer({
+      id: 'lot-selected-outline',
+      type: 'line',
+      source: 'lot-selected',
+      paint: { 'line-color': '#fbbf24', 'line-width': 3 }
+    });
+
+    lotHoverPopup = new maplibregl.Popup({
+      closeButton: false,
+      closeOnClick: false,
+      className: 'mboard-lot-popup',
+      offset: 12
+    });
+
+    map.on('mouseenter', 'lots', (e) => {
+      if (activeTool !== 'inspect') return;
+      map.getCanvas().style.cursor = 'pointer';
+      const f = e.features[0];
+      const p = f.properties;
+      hoveredLotId = p.lot_id;
+      lotHoverPopup.setLngLat(e.lngLat)
+        .setHTML(`<strong>Lot ${p.lot}</strong> · ${p.zone}<br><span class="muted">${p.lot_id}</span>${p.address ? '<br>' + p.address : ''}`)
+        .addTo(map);
+      map.setPaintProperty('lots', 'fill-opacity', [
+        'case', ['==', ['get', 'lot_id'], p.lot_id], 0.65,
+        ['==', ['get', 'lot_id'], selectedLotId || ''], 0.55, 0.35
+      ]);
+    });
+
+    map.on('mouseleave', 'lots', () => {
+      map.getCanvas().style.cursor = '';
+      hoveredLotId = null;
+      lotHoverPopup.remove();
+      resetLotFillOpacity();
+    });
+
+    map.on('mousemove', 'lots', (e) => {
+      if (lotHoverPopup.isOpen()) lotHoverPopup.setLngLat(e.lngLat);
+    });
+
+    map.on('click', 'lots', (e) => {
+      if (activeTool !== 'inspect') return;
+      e.originalEvent.stopPropagation();
+      const f = e.features[0];
+      selectLot(f.properties.lot_id, e.lngLat.lng, e.lngLat.lat, f);
+    });
+  }
+
+  function resetLotFillOpacity() {
+    if (!map.getLayer('lots')) return;
+    map.setPaintProperty('lots', 'fill-opacity', [
+      'case', ['==', ['get', 'lot_id'], selectedLotId || ''], 0.55, 0.35
+    ]);
+  }
+
+  function selectLot(lotId, lng, lat, feature) {
+    selectedLotId = lotId;
+    const lotFeature = feature || sourceMap.lots?.features?.find((f) => f.properties.lot_id === lotId);
+    if (lotFeature) {
+      map.getSource('lot-selected')?.setData({ type: 'FeatureCollection', features: [lotFeature] });
+    }
+    resetLotFillOpacity();
+    showLotPanel(lotId, lng, lat, lotFeature?.properties || lotLookup[lotId]);
+  }
+
+  function clearLotSelection() {
+    selectedLotId = null;
+    map.getSource('lot-selected')?.setData({ type: 'FeatureCollection', features: [] });
+    resetLotFillOpacity();
   }
 
   function zoneMatchArray() {
@@ -261,6 +372,11 @@
     const vis = visible ? 'visible' : 'none';
     if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis);
     if (map.getLayer(id + '-label')) map.setLayoutProperty(id + '-label', 'visibility', vis);
+    if (id === 'lots') {
+      ['lot-selected-fill', 'lot-selected-outline'].forEach((lid) => {
+        if (map.getLayer(lid)) map.setLayoutProperty(lid, 'visibility', vis);
+      });
+    }
   }
 
   function setLayerOpacity(val) {
@@ -276,6 +392,7 @@
   function setBasemap(key) {
     const bm = config.basemaps[key];
     if (!bm) return;
+    document.body.classList.toggle('mboard-mosaic-mode', key === 'mosaic');
     const style = JSON.parse(JSON.stringify(bm));
     addDataSourcesToStyle(style);
 
@@ -302,7 +419,143 @@
 
   function onMapClick(e) {
     if (activeTool !== 'inspect') return;
+    const lot = findFeatureAt('lots', e.lngLat.lng, e.lngLat.lat);
+    if (lot) {
+      selectLot(lot.properties.lot_id, e.lngLat.lng, e.lngLat.lat, lot);
+      return;
+    }
+    clearLotSelection();
     showSitePanel(e.lngLat.lng, e.lngLat.lat);
+  }
+
+  function metaRow(label, value, mono) {
+    if (value == null || value === '' || value === '—') return '';
+    return `<div class="mboard-meta-row"><span class="mboard-meta-key">${label}</span><span class="mboard-meta-val${mono ? ' mboard-meta-val--mono' : ''}">${value}</span></div>`;
+  }
+
+  function showLotPanel(lotId, lng, lat, props) {
+    const p = props || lotLookup[lotId] || {};
+    const address = p.address || `Lot ${p.lot} ${p.dp}`;
+    $('#sitePanelTitle').textContent = 'Lot Intelligence';
+
+    const constraints = [
+      { k: 'Flood', v: p.flood, ok: p.flood === 'Clear' },
+      { k: 'Bushfire', v: p.bushfire, ok: p.bushfire === 'Not mapped' },
+      { k: 'Heritage', v: p.heritage, ok: p.heritage === 'None' },
+      { k: 'Biodiversity', v: p.biodiversity, ok: p.biodiversity === 'None' },
+      { k: 'Contamination', v: p.contamination, ok: p.contamination === 'None' },
+      { k: 'Easements', v: p.easements, ok: p.easements === 'None identified' }
+    ];
+
+    $('#sitePanelBody').innerHTML = `
+      <div class="mboard-site-report mboard-lot-report">
+        <div class="mboard-premium-badge">Premium · Mecone-style Lot Intelligence</div>
+        <div class="mboard-site-address">${address}</div>
+        <div class="mboard-lot-id">${p.lot_id || lotId} · ${p.suburb} NSW ${p.postcode}</div>
+        <div class="mboard-site-coords">${lat.toFixed(6)}°, ${lng.toFixed(6)}°</div>
+
+        <div class="mboard-lot-tabs" role="tablist">
+          <button type="button" class="active" data-tab="overview">Overview</button>
+          <button type="button" data-tab="planning">Planning</button>
+          <button type="button" data-tab="property">Property</button>
+          <button type="button" data-tab="constraints">Constraints</button>
+          <button type="button" data-tab="das">DAs &amp; Sales</button>
+        </div>
+
+        <div class="mboard-tab-panel active" data-panel="overview">
+          <div class="mboard-meta-table">
+            ${metaRow('Lot / DP', `${p.lot} / ${p.dp}`)}
+            ${metaRow('Section', p.section)}
+            ${metaRow('Plan type', p.plan_type)}
+            ${metaRow('Title ref', p.title_ref, true)}
+            ${metaRow('LGA', p.lga)}
+            ${metaRow('Parish', p.parish)}
+            ${metaRow('Area', p.area_display)}
+            ${metaRow('Frontage', p.frontage_m ? p.frontage_m + 'm' : null)}
+            ${metaRow('Depth', p.depth_m ? p.depth_m + 'm' : null)}
+            ${metaRow('Land use', p.land_use)}
+            ${metaRow('Dwelling type', p.dwelling_type)}
+            ${metaRow('Strata', p.strata)}
+            ${metaRow('Owner type', p.owner_type)}
+          </div>
+          ${p.listing_status ? `<div class="mboard-lot-listing"><span class="mboard-badge mboard-badge--warn">${p.listing_status}</span> ${p.listing_price || ''}</div>` : ''}
+        </div>
+
+        <div class="mboard-tab-panel" data-panel="planning">
+          <div class="mboard-meta-table">
+            ${metaRow('Zone', `<span class="mboard-badge mboard-badge--zone">${p.zone}</span> ${p.zone_name}`)}
+            ${metaRow('LEP', p.lep)}
+            ${metaRow('FSR', p.fsr)}
+            ${metaRow('Height', p.height)}
+            ${metaRow('Min lot size', p.min_lot_size)}
+            ${metaRow('TOD', p.tod)}
+            ${metaRow('LMR Housing', p.lmr)}
+            ${metaRow('Corridor', p.corridor)}
+          </div>
+        </div>
+
+        <div class="mboard-tab-panel" data-panel="property">
+          <div class="mboard-meta-table">
+            ${metaRow('Last sale', p.last_sale_date)}
+            ${metaRow('Sale price', p.last_sale_price)}
+            ${metaRow('Land value', p.valuation_land)}
+            ${metaRow('Total value', p.valuation_total)}
+            ${metaRow('Council rates', p.rates_annual ? p.rates_annual + '/yr' : null)}
+            ${metaRow('Year built', p.year_built)}
+            ${metaRow('Storeys', p.storeys)}
+            ${metaRow('Bedrooms', p.beds)}
+            ${metaRow('Bathrooms', p.baths)}
+            ${metaRow('Car spaces', p.cars)}
+          </div>
+        </div>
+
+        <div class="mboard-tab-panel" data-panel="constraints">
+          <ul class="mboard-constraint-list mboard-constraint-list--detailed">
+            ${constraints.map((c) => `<li><span class="dot" style="background:${c.ok ? '#10b981' : '#f59e0b'}"></span><strong>${c.k}:</strong> ${c.v}</li>`).join('')}
+          </ul>
+        </div>
+
+        <div class="mboard-tab-panel" data-panel="das">
+          <div class="mboard-meta-table">
+            ${metaRow('DA number', p.da_number, true)}
+            ${metaRow('DA status', p.da_status)}
+            ${metaRow('Lodged', p.da_lodged)}
+            ${metaRow('Description', p.da_description)}
+          </div>
+          ${!p.da_number ? '<p class="mboard-hint">No recent development applications on this lot.</p>' : ''}
+        </div>
+
+        <div class="mboard-metadata-footer">
+          <span>Source: ${p.metadata_source || 'NSW spatial data'}</span>
+          <span>Updated: ${p.metadata_updated || '—'}</span>
+        </div>
+
+        <div class="mboard-lot-actions">
+          <button type="button" class="mboard-btn mboard-btn--ghost mboard-btn--sm" id="btnLotReport">Export lot PDF</button>
+          <button type="button" class="mboard-btn mboard-btn--ghost mboard-btn--sm" id="btnClearLot">Clear selection</button>
+        </div>
+      </div>
+    `;
+
+    $('#sitePanelBody').querySelectorAll('.mboard-lot-tabs button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        $('#sitePanelBody').querySelectorAll('.mboard-lot-tabs button').forEach((b) => b.classList.toggle('active', b === btn));
+        $('#sitePanelBody').querySelectorAll('.mboard-tab-panel').forEach((panel) => {
+          panel.classList.toggle('active', panel.dataset.panel === btn.dataset.tab);
+        });
+      });
+    });
+
+    $('#btnClearLot')?.addEventListener('click', () => {
+      clearLotSelection();
+      $('#sitePanelTitle').textContent = 'Site Intelligence';
+      $('#sitePanelBody').innerHTML = `<div class="mboard-site-empty"><div class="mboard-site-empty-icon">📍</div><p>Click any lot on the cadastre grid for premium lot intelligence.</p></div>`;
+    });
+
+    $('#btnLotReport')?.addEventListener('click', () => generateSiteReport());
+
+    $('#sitePanel').classList.remove('collapsed');
+    map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 16), duration: 800 });
   }
 
   function nearestStation(lng, lat) {
@@ -399,8 +652,17 @@
   }
 
   function showSitePanel(lng, lat, extra = {}) {
+    if (!extra.listing) {
+      const lotHit = findFeatureAt('lots', lng, lat);
+      if (lotHit) {
+        selectLot(lotHit.properties.lot_id, lng, lat, lotHit);
+        return;
+      }
+    }
+
     const zone = findFeatureAt('zoning', lng, lat);
-    const parcel = findFeatureAt('parcels', lng, lat);
+    const lotAtPoint = findFeatureAt('lots', lng, lat);
+    const parcel = lotAtPoint || findFeatureAt('parcels', lng, lat);
     const flood = findFeatureAt('flood', lng, lat);
     const bushfire = findFeatureAt('bushfire', lng, lat);
     const heritage = findFeatureAt('heritage', lng, lat);
@@ -510,6 +772,22 @@
     map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 15), duration: 800 });
   }
 
+  function searchLots(query) {
+    const q = query.toLowerCase();
+    const lots = sourceMap.lots?.features || [];
+    return lots.filter((f) => {
+      const p = f.properties;
+      return [p.lot_id, p.lot, p.dp, p.address, p.suburb].some((v) => v && String(v).toLowerCase().includes(q));
+    }).slice(0, 6).map((f) => {
+      const c = f.geometry.coordinates[0];
+      return {
+        ...f.properties,
+        lng: (c[0][0] + c[2][0]) / 2,
+        lat: (c[0][1] + c[2][1]) / 2
+      };
+    });
+  }
+
   function findFeatureAt(sourceId, lng, lat) {
     const pt = turf.point([lng, lat]);
     const fc = sourceMap[sourceId];
@@ -593,6 +871,22 @@
   async function geocodeSearch(query) {
     const results = $('#searchResults');
     if (!query || query.length < 2) { results.hidden = true; return; }
+
+    const lotMatches = searchLots(query);
+    if (lotMatches.length) {
+      results.innerHTML = lotMatches.map((m) =>
+        `<button type="button" data-lot="${m.lot_id}" data-lng="${m.lng}" data-lat="${m.lat}">${m.address || 'Lot ' + m.lot}<small>${m.lot_id} · ${m.zone}</small></button>`
+      ).join('');
+      results.hidden = false;
+      results.querySelectorAll('button[data-lot]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          selectLot(btn.dataset.lot, +btn.dataset.lng, +btn.dataset.lat);
+          results.hidden = true;
+          $('#geoSearch').value = btn.textContent.trim();
+        });
+      });
+      return;
+    }
 
     if (/^-?\d+\.?\d*,\s*-?\d+\.?\d*$/.test(query)) {
       const [lat, lng] = query.split(',').map(Number);

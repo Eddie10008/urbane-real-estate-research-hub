@@ -29,7 +29,7 @@
 
     <div class="mboard-search">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-      <input type="search" id="geoSearch" placeholder="Search address, suburb, lot, or coordinates…" autocomplete="off" aria-label="Geographic search">
+      <input type="search" id="geoSearch" placeholder="Search lot, DP, address, or coordinates…" autocomplete="off" aria-label="Geographic search">
       <div id="searchResults" class="mboard-search-results" hidden></div>
     </div>
 
@@ -58,6 +58,7 @@
       <div class="mboard-basemap-picker">
         <label for="basemapSelect">Basemap</label>
         <select id="basemapSelect" aria-label="Basemap style">
+          <option value="mosaic" selected>Mosaic Grid (Mecone Style)</option>
           <option value="satellite">Satellite Imagery</option>
           <option value="hybrid">Hybrid (Satellite + Labels)</option>
           <option value="streets">Street Map</option>
@@ -113,14 +114,14 @@
 
   <aside class="mboard-sidebar mboard-sidebar--right" id="sitePanel">
     <div class="mboard-panel-header">
-      <h2 id="sitePanelTitle">Site Intelligence</h2>
+      <h2 id="sitePanelTitle">Lot Intelligence <span class="mboard-pro-tag">PRO</span></h2>
       <button type="button" class="mboard-icon-btn" id="collapseSite" aria-label="Collapse site panel">›</button>
     </div>
     <div class="mboard-panel-body" id="sitePanelBody">
       <div class="mboard-site-empty">
         <div class="mboard-site-empty-icon">📍</div>
-        <p>Click any location on the map to view planning controls, cadastre, environmental constraints, and demographic data.</p>
-        <p class="mboard-hint">Inspired by <a href="https://meconemosaic.au/" target="_blank" rel="noopener">Mecone Mosaic</a> planning analytics with Google Earth–style 3D exploration.</p>
+        <p>Click any <strong>lot on the cadastre grid</strong> for premium property intelligence — planning controls, valuations, constraints, DAs, and full metadata per parcel.</p>
+        <p class="mboard-hint" id="lotGridHint">Mecone Mosaic–style cadastre grid · click a lot for full metadata</p>
       </div>
     </div>
   </aside>
@@ -194,12 +195,13 @@
             </ul>
           </div>
           <div>
-            <h4>Tools</h4>
+            <h4>Cadastre Grid (Premium)</h4>
             <ul>
-              <li><strong>Inspect:</strong> Click a site for property-level intelligence</li>
-              <li><strong>Measure:</strong> Distance and area with metric units</li>
-              <li><strong>Draw:</strong> Study areas and radius buffers</li>
-              <li><strong>Site Report:</strong> Export PDF snapshot of current view &amp; data</li>
+              <li><strong>Mosaic basemap:</strong> Mecone-style planning grid over satellite</li>
+              <li><strong>Lot click:</strong> Full metadata — title, zone, FSR, valuations, DAs</li>
+              <li><strong>Search:</strong> Find lots by number, DP, or address</li>
+              <li><strong>Tabs:</strong> Overview · Planning · Property · Constraints · DAs</li>
+              <li><strong>Hover:</strong> Quick lot ID tooltip on cadastre grid</li>
             </ul>
           </div>
           <div>
@@ -239,6 +241,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script src="js/m-board-config.js"></script>
   <script src="js/m-board-nsw-research.js"></script>
+  <script src="js/m-board-lots.js"></script>
   <script src="js/m-board-data.js"></script>
   <script src="js/m-board.js"></script>
 </body>

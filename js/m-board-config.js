@@ -4,7 +4,7 @@
  */
 const MBOARD_CONFIG = {
   defaultCenter: [150.9069, -33.7689],
-  defaultZoom: 13,
+  defaultZoom: 16,
   australiaBounds: [[112.9, -44.2], [154.0, -9.1]],
 
   // Free Cesium Ion token for terrain/imagery (replace with your own for production)
@@ -89,6 +89,27 @@ const MBOARD_CONFIG = {
         }
       },
       layers: [{ id: 'light', type: 'raster', source: 'light' }]
+    },
+    mosaic: {
+      version: 8,
+      sources: {
+        esri: {
+          type: 'raster',
+          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256,
+          attribution: 'Esri'
+        },
+        dark: {
+          type: 'raster',
+          tiles: ['https://basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png'],
+          tileSize: 256,
+          attribution: 'CARTO'
+        }
+      },
+      layers: [
+        { id: 'esri', type: 'raster', source: 'esri', paint: { 'raster-opacity': 0.55, 'raster-saturation': -0.3, 'raster-brightness-min': 0.05, 'raster-brightness-max': 0.75 } },
+        { id: 'dark', type: 'raster', source: 'dark', paint: { 'raster-opacity': 0.45 } }
+      ]
     }
   },
 
@@ -98,7 +119,7 @@ const MBOARD_CONFIG = {
       name: 'Planning Controls',
       color: '#3b9eff',
       layers: [
-        { id: 'zoning', name: 'Land Zoning', source: 'zoning', type: 'fill', defaultOn: true, paint: { 'fill-opacity': 0.45 } },
+        { id: 'zoning', name: 'Land Zoning', source: 'zoning', type: 'fill', defaultOn: false, paint: { 'fill-opacity': 0.35 } },
         { id: 'fsr', name: 'Floor Space Ratio (FSR)', source: 'fsr', type: 'fill', defaultOn: false },
         { id: 'heights', name: 'Building Heights', source: 'heights', type: 'fill', defaultOn: false },
         { id: 'lot-size', name: 'Minimum Lot Size', source: 'lot-size', type: 'fill', defaultOn: false },
@@ -107,10 +128,13 @@ const MBOARD_CONFIG = {
     },
     {
       id: 'cadastre',
-      name: 'Cadastre & Property',
+      name: 'Cadastre Grid (Mecone Style)',
       color: '#10b981',
       layers: [
-        { id: 'parcels', name: 'Lot & Parcel Boundaries', source: 'parcels', type: 'line', defaultOn: true, paint: { 'line-color': '#fbbf24', 'line-width': 1.2 } },
+        { id: 'lots', name: 'Lot Parcels (zone fill)', source: 'lots', type: 'fill', defaultOn: true, paint: { 'fill-opacity': 0.35 } },
+        { id: 'lot-grid', name: 'Cadastre Grid Lines', source: 'lot-grid', type: 'line', defaultOn: true, paint: { 'line-color': '#5eead4', 'line-width': 1.5 } },
+        { id: 'lot-labels', name: 'Lot Numbers', source: 'lot-labels', type: 'symbol', defaultOn: true },
+        { id: 'parcels', name: 'Legacy Parcel Boundaries', source: 'parcels', type: 'line', defaultOn: false, paint: { 'line-color': '#fbbf24', 'line-width': 1.2 } },
         { id: 'addresses', name: 'Property Addresses', source: 'addresses', type: 'circle', defaultOn: false, paint: { 'circle-radius': 4, 'circle-color': '#10b981' } },
         { id: 'listings', name: 'Urbane Listings', source: 'listings', type: 'circle', defaultOn: true, paint: { 'circle-radius': 7, 'circle-color': '#ef4444', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' } }
       ]
