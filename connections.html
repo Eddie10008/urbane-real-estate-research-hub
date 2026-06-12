@@ -11,10 +11,10 @@
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      <a href="index.html" class="logo"><span class="logo-icon">U</span> Urbane Research Hub</a>
+      <a href="research.html" class="logo"><span class="logo-icon">U</span> Urbane Research Hub</a>
       <button class="nav-toggle" aria-label="Toggle navigation">☰</button>
       <nav class="main-nav"><ul>
-        <li><a href="index.html">Home</a></li><li><a href="what.html">What</a></li><li><a href="who.html">Who</a></li>
+        <li><a href="research.html">Home</a></li><li><a href="what.html">What</a></li><li><a href="who.html">Who</a></li>
         <li><a href="owners.html">Owners</a></li><li><a href="financials.html">Financials</a></li>
         <li><a href="connections.html">Network</a></li><li><a href="competition.html">Competition</a></li><li><a href="legal.html">Legal</a></li>
       </ul></nav>
@@ -22,7 +22,7 @@
   </header>
   <main class="container">
     <header class="page-header fade-in">
-      <div class="breadcrumb"><a href="index.html">Home</a> / 6 Degrees of Connection</div>
+      <div class="breadcrumb"><a href="research.html">Home</a> / 6 Degrees of Connection</div>
       <h1>Network & Connections</h1>
       <p class="lead">Mapping Urbane Real Estate's professional ecosystem — partners, colleagues, vendors, clients, and competitors.</p>
     </header>
@@ -38,7 +38,7 @@
       <div id="connectionList"></div>
     </section>
   </main>
-  <footer class="site-footer"><div class="container"><p><a href="index.html">← Back to Research Hub</a></p></div></footer>
+  <footer class="site-footer"><div class="container"><p><a href="research.html">← Back to Research Hub</a></p></div></footer>
   <script src="js/data.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -57,7 +57,11 @@
         lawyers: 'Legal & Conveyancing'
       };
       Object.entries(URBANE_DATA.connections).forEach(([key, items]) => {
-        list.innerHTML += `<div class="content-section connection-item fade-in"><h3>${labels[key] || key}</h3><div>${items.map(i => `<span class="tag">${i}</span>`).join('')}</div></div>`;
+        const tags = items.map(i => {
+          const label = typeof i === 'string' ? i : (i.context ? `${i.name} — ${i.context}` : i.name);
+          return `<span class="tag">${label}</span>`;
+        }).join('');
+        list.innerHTML += `<div class="content-section connection-item fade-in"><h3>${labels[key] || key}</h3><div>${tags}</div></div>`;
       });
     });
   </script>
