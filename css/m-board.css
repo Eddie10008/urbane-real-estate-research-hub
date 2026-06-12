@@ -740,6 +740,34 @@ html, body.mboard-app {
 
 .mboard-help li { margin-bottom: 4px; }
 
+.mboard-nsw-banner {
+  background: rgba(59, 158, 255, 0.08);
+  border: 1px solid rgba(59, 158, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.mboard-nsw-banner h3 {
+  font-size: 0.82rem;
+  margin-bottom: 8px;
+  color: var(--mb-accent);
+}
+
+.mboard-nsw-banner p {
+  margin-bottom: 6px;
+  color: var(--mb-text-muted);
+}
+
+.mboard-btn--sm {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  margin-top: 6px;
+  width: 100%;
+}
+
 .mboard-disclaimer {
   font-size: 0.75rem;
   padding-top: 12px;

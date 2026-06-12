@@ -6,7 +6,7 @@
   'use strict';
 
   const config = MBOARD_CONFIG;
-  const { sourceMap } = MBOARD_DATA;
+  const { sourceMap, research: nswResearch } = MBOARD_DATA;
 
   let map = null;
   let cesiumViewer = null;
@@ -27,7 +27,8 @@
     initCesium();
     buildLayerTree();
     bindEvents();
-    showToast('M-Board ready — click the map to inspect a site');
+    renderNswContextBanner();
+    showToast('M-Board ready — NSW planning layers loaded for Greater Western Sydney');
   }
 
   function initMap2D() {
@@ -81,6 +82,16 @@
     map.on('click', 'listings', (e) => {
       const p = e.features[0].properties;
       showSitePanel(e.lngLat.lng, e.lngLat.lat, { address: p.address, listing: p });
+    });
+
+    ['stations', 'competitors', 'employment'].forEach((layerId) => {
+      map.on('mouseenter', layerId, () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', layerId, () => { map.getCanvas().style.cursor = ''; });
+      map.on('click', layerId, (e) => {
+        const p = e.features[0].properties;
+        const label = p.name || p.address;
+        showSitePanel(e.lngLat.lng, e.lngLat.lat, { address: label });
+      });
     });
   }
 
@@ -294,6 +305,99 @@
     showSitePanel(e.lngLat.lng, e.lngLat.lat);
   }
 
+  function nearestStation(lng, lat) {
+    if (!nswResearch?.stations) return null;
+    const pt = turf.point([lng, lat]);
+    let best = null;
+    let bestDist = Infinity;
+    for (const s of nswResearch.stations) {
+      const d = turf.distance(pt, turf.point([s.lng, s.lat]), { units: 'meters' });
+      if (d < bestDist) { bestDist = d; best = { ...s, distanceM: Math.round(d) }; }
+    }
+    return bestDist <= 1200 ? best : null;
+  }
+
+  function renderNswContextBanner() {
+    const panel = $('#layersPanel .mboard-panel-body');
+    if (!panel || !nswResearch || document.getElementById('nswContextBanner')) return;
+
+    const banner = document.createElement('div');
+    banner.id = 'nswContextBanner';
+    banner.className = 'mboard-nsw-banner';
+    banner.innerHTML = `
+      <h3>NSW Planning Context</h3>
+      <p><strong>Blacktown City:</strong> ~${nswResearch.lgas.blacktown.population2025.toLocaleString()} residents (2025), projected ${nswResearch.lgas.blacktown.populationProjected.toLocaleString()}</p>
+      <p><strong>Housing Accord:</strong> ${nswResearch.housingAccord.northWestTarget.toLocaleString()} new homes across Blacktown, The Hills &amp; Hawkesbury by ${nswResearch.housingAccord.targetDate}</p>
+      <p><strong>Corridor Strategy:</strong> ${nswResearch.policies.corridor.dwellingCapacityTest.toLocaleString()} dwelling capacity test along Mt Druitt–Toongabbie rail line</p>
+      <button type="button" class="mboard-btn mboard-btn--ghost mboard-btn--sm" id="btnNswResearch">View NSW research summary</button>
+    `;
+    panel.insertBefore(banner, panel.querySelector('.mboard-basemap-picker'));
+  }
+
+  function showNswResearchModal() {
+    if (!nswResearch) return;
+    const r = nswResearch;
+    const body = $('#nswResearchBody');
+    if (!body) { openModal('#helpModal'); return; }
+
+    body.innerHTML = `
+      <div class="mboard-help-grid">
+        <div>
+          <h4>State Overview</h4>
+          <ul>
+            <li>Population: ~${(r.meta.population2024 / 1e6).toFixed(1)}M (${r.meta.lastUpdated})</li>
+            <li>Planning framework: ${r.meta.planningFramework}</li>
+            <li>Zoning standard: ${r.meta.standardInstrument}</li>
+            <li>Housing policy: ${r.meta.housingSepp}</li>
+          </ul>
+        </div>
+        <div>
+          <h4>TOD Program</h4>
+          <ul>
+            <li>${r.policies.tod.acceleratedPrecincts} accelerated precincts (1,200m radius)</li>
+            <li>${r.policies.tod.seppStations} TOD SEPP stations (400m radius)</li>
+            <li>~${r.policies.tod.homesInPipeline.toLocaleString()} homes in planning pipeline</li>
+            <li>Western Sydney TOD: Blacktown, St Marys stations</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Low &amp; Mid-Rise Housing</h4>
+          <ul>
+            <li>Stage 2 effective: ${r.policies.lmr.stage2Date}</li>
+            <li>${r.policies.lmr.centresAndStations} town centres &amp; stations</li>
+            <li>${r.policies.lmr.radius}m walking distance buffer</li>
+            <li>Up to ${r.policies.lmr.maxStoreys} storeys near stations</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Blacktown Corridor</h4>
+          <ul>
+            <li>Study area: ${r.policies.corridor.areaHa.toLocaleString()} hectares</li>
+            <li>Capacity test: ${r.policies.corridor.dwellingCapacityTest.toLocaleString()} dwellings</li>
+            <li>LMR alone could deliver: ${r.policies.corridor.lmrPotential.toLocaleString()}</li>
+            <li>Centres: ${r.policies.corridor.centres.join(', ')}</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Growth Precincts</h4>
+          <ul>
+            ${r.growthPrecincts.slice(0, 5).map((p) => `<li><strong>${p.name}</strong> — ${p.status}${p.dwellings ? ' (' + p.dwellings.toLocaleString() + ' dwellings)' : ''}</li>`).join('')}
+          </ul>
+        </div>
+        <div>
+          <h4>Urbane Real Estate</h4>
+          <ul>
+            <li>HQ: ${r.urbane.hq.address}</li>
+            <li>${r.urbane.serviceSuburbs} service suburbs across Greater Western Sydney</li>
+            <li>${r.urbane.competitors.length} mapped competitor agencies in Blacktown precinct</li>
+          </ul>
+        </div>
+      </div>
+      <p class="mboard-disclaimer">Research compiled from ABS Census 2021, NSW Planning Portal, Blacktown City Council corridor strategy, National Housing Accord targets, and Housing SEPP 2021. Demonstration layers — verify with authoritative sources before planning decisions.</p>
+    `;
+    openModal('#nswResearchModal');
+  }
+
   function showSitePanel(lng, lat, extra = {}) {
     const zone = findFeatureAt('zoning', lng, lat);
     const parcel = findFeatureAt('parcels', lng, lat);
@@ -301,14 +405,34 @@
     const bushfire = findFeatureAt('bushfire', lng, lat);
     const heritage = findFeatureAt('heritage', lng, lat);
     const pop = findFeatureAt('population', lng, lat);
+    const todZone = findFeatureAt('tod', lng, lat);
+    const lmrZone = findFeatureAt('lmr', lng, lat);
+    const corridorZone = findFeatureAt('corridor-area', lng, lat) || findFeatureAt('corridor', lng, lat);
+    const precinct = findFeatureAt('precincts', lng, lat);
+    const lgaZone = findFeatureAt('lga', lng, lat);
+    const serviceZone = findFeatureAt('service-area', lng, lat);
+    const station = nearestStation(lng, lat);
 
     const address = extra.address || parcel?.properties?.address || reverseGeocodeShort(lng, lat);
     const zp = zone?.properties || {};
+    const isNsw = $('#jurisdictionSelect').value === 'NSW';
 
     $('#sitePanelBody').innerHTML = `
       <div class="mboard-site-report">
         <div class="mboard-site-address">${address}</div>
         <div class="mboard-site-coords">${lat.toFixed(6)}°, ${lng.toFixed(6)}°</div>
+
+        ${isNsw && (todZone || lmrZone || corridorZone || station) ? `
+        <div class="mboard-data-section">
+          <h3>NSW Housing Policy</h3>
+          <ul class="mboard-constraint-list">
+            ${station ? `<li><span class="dot" style="background:#06b6d4"></span> Nearest station: <strong>${station.name}</strong> (${station.distanceM}m) — ${station.lines.join(', ')}</li>` : ''}
+            ${todZone ? `<li><span class="dot" style="background:#eab308"></span> TOD: ${todZone.properties.name} (${todZone.properties.policy})</li>` : ''}
+            ${lmrZone ? `<li><span class="dot" style="background:#f97316"></span> LMR Housing: ${lmrZone.properties.name} — max ${lmrZone.properties.max_storeys} storeys</li>` : ''}
+            ${corridorZone ? `<li><span class="dot" style="background:#dc2626"></span> Mt Druitt–Toongabbie Corridor — ${corridorZone.properties.dwellings || (corridorZone.properties.area_ha ? corridorZone.properties.area_ha.toLocaleString() + ' ha study area' : 'In corridor')}</li>` : ''}
+            ${precinct ? `<li><span class="dot" style="background:#f59e0b"></span> Growth precinct: ${precinct.properties.name} (${precinct.properties.status})</li>` : ''}
+          </ul>
+        </div>` : ''}
 
         <div class="mboard-data-section">
           <h3>Planning Controls</h3>
@@ -319,7 +443,11 @@
             </div>
             <div class="mboard-data-item">
               <div class="label">LGA</div>
-              <div class="value">${zp.lga || '—'}</div>
+              <div class="value">${zp.lga || lgaZone?.properties?.name || '—'}</div>
+            </div>
+            <div class="mboard-data-item">
+              <div class="label">LEP</div>
+              <div class="value">${zp.lep || '—'}</div>
             </div>
             <div class="mboard-data-item">
               <div class="label">FSR</div>
@@ -333,10 +461,7 @@
               <div class="label">Min Lot Size</div>
               <div class="value">${zp.lot_size || '—'}</div>
             </div>
-            <div class="mboard-data-item">
-              <div class="label">Jurisdiction</div>
-              <div class="value">${$('#jurisdictionSelect').value}</div>
-            </div>
+            ${serviceZone ? `<div class="mboard-data-item"><div class="label">Urbane Footprint</div><div class="value"><span class="mboard-badge mboard-badge--ok">In service area</span></div></div>` : ''}
           </div>
         </div>
 
@@ -707,6 +832,10 @@
     $('#btnSiteReport').addEventListener('click', generateSiteReport);
     $('#btnWorkbench').addEventListener('click', () => openModal('#workbenchModal'));
     $('#btnHelp').addEventListener('click', () => openModal('#helpModal'));
+
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'btnNswResearch') showNswResearchModal();
+    });
 
     $$('[data-close-modal]').forEach((el) => el.addEventListener('click', closeModals));
 

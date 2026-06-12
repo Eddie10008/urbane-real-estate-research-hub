@@ -1,8 +1,10 @@
 /**
- * M-Board sample spatial data — Greater Western Sydney & Australia-wide reference layers
- * Demonstration datasets modelled on NSW planning portal structure
+ * M-Board spatial data — NSW researched layers for Greater Western Sydney
+ * Built from NSW_RESEARCH (ABS 2021, NSW Planning Portal, Blacktown City Council)
  */
 const MBOARD_DATA = (() => {
+  const R = typeof NSW_RESEARCH !== 'undefined' ? NSW_RESEARCH : null;
+
   function rect(lng, lat, w, h, props) {
     return {
       type: 'Feature',
@@ -24,27 +26,40 @@ const MBOARD_DATA = (() => {
     return { type: 'Feature', properties: props, geometry: { type: 'Point', coordinates: [lng, lat] } };
   }
 
-  const zoning = {
-    type: 'FeatureCollection',
-    features: [
-      rect(150.898, -33.772, 0.008, 0.006, { zone: 'R3', name: 'Medium Density Residential', lga: 'Blacktown', fsr: '0.9:1', height: '12m', lot_size: '450m²' }),
-      rect(150.906, -33.768, 0.006, 0.005, { zone: 'B2', name: 'Local Centre', lga: 'Blacktown', fsr: '2:1', height: '16m', lot_size: 'N/A' }),
-      rect(150.912, -33.765, 0.007, 0.005, { zone: 'R4', name: 'High Density Residential', lga: 'Blacktown', fsr: '1.5:1', height: '21m', lot_size: 'N/A' }),
-      rect(150.885, -33.758, 0.01, 0.008, { zone: 'R2', name: 'Low Density Residential', lga: 'Blacktown', fsr: '0.5:1', height: '9m', lot_size: '600m²' }),
-      rect(150.920, -33.780, 0.009, 0.007, { zone: 'R1', name: 'General Residential', lga: 'Blacktown', fsr: '0.45:1', height: '8.5m', lot_size: '700m²' }),
-      rect(150.870, -33.785, 0.012, 0.009, { zone: 'IN1', name: 'General Industrial', lga: 'Blacktown', fsr: '1:1', height: '15m', lot_size: 'N/A' }),
-      rect(150.935, -33.755, 0.008, 0.006, { zone: 'SP2', name: 'Infrastructure', lga: 'Blacktown', fsr: 'N/A', height: 'N/A', lot_size: 'N/A' }),
-      rect(150.950, -33.770, 0.015, 0.012, { zone: 'RU4', name: 'Primary Production Small Lots', lga: 'Blacktown', fsr: '0.25:1', height: '9m', lot_size: '4000m²' }),
-      rect(151.000, -33.820, 0.02, 0.015, { zone: 'R3', name: 'Medium Density Residential', lga: 'Parramatta', fsr: '0.9:1', height: '14m', lot_size: '400m²' }),
-      rect(151.050, -33.850, 0.018, 0.014, { zone: 'B4', name: 'Mixed Use', lga: 'Parramatta', fsr: '3:1', height: '45m', lot_size: 'N/A' }),
-      rect(150.750, -33.750, 0.025, 0.02, { zone: 'R2', name: 'Low Density Residential', lga: 'Penrith', fsr: '0.5:1', height: '9m', lot_size: '550m²' }),
-      rect(151.100, -33.900, 0.03, 0.025, { zone: 'E1', name: 'Local Centre', lga: 'Cumberland', fsr: '1.5:1', height: '18m', lot_size: 'N/A' })
-    ]
-  };
+  /** Approximate circle polygon for policy buffers (400m / 800m) */
+  function circlePolygon(lng, lat, radiusM, steps = 48, props = {}) {
+    const coords = [];
+    const latRad = lat * Math.PI / 180;
+    const mPerDegLat = 111320;
+    const mPerDegLng = 111320 * Math.cos(latRad);
+    for (let i = 0; i <= steps; i++) {
+      const angle = (i / steps) * 2 * Math.PI;
+      coords.push([
+        lng + (radiusM * Math.cos(angle)) / mPerDegLng,
+        lat + (radiusM * Math.sin(angle)) / mPerDegLat
+      ]);
+    }
+    return { type: 'Feature', properties: props, geometry: { type: 'Polygon', coordinates: [coords] } };
+  }
+
+  function stationCoords(names) {
+    if (!R) return [];
+    const lookup = Object.fromEntries(R.stations.map((s) => [s.name, [s.lng, s.lat]]));
+    return names.map((n) => lookup[n]).filter(Boolean);
+  }
+
+  /* ── Planning: zoning from researched LEP samples ───────── */
+  const zoningFeatures = (R?.zoningSamples || []).map((z) =>
+    rect(z.lng, z.lat, z.w, z.h, {
+      zone: z.zone, name: z.name, lga: z.lga, fsr: z.fsr, height: z.height,
+      lot_size: z.lot_size, lep: z.lep
+    })
+  );
+  const zoning = { type: 'FeatureCollection', features: zoningFeatures };
 
   const fsr = {
     type: 'FeatureCollection',
-    features: zoning.features.map(f => ({
+    features: zoning.features.map((f) => ({
       ...f,
       properties: { ...f.properties, fsr_value: parseFloat(f.properties.fsr) || 0, label: f.properties.fsr }
     }))
@@ -52,7 +67,7 @@ const MBOARD_DATA = (() => {
 
   const heights = {
     type: 'FeatureCollection',
-    features: zoning.features.map(f => ({
+    features: zoning.features.map((f) => ({
       ...f,
       properties: { ...f.properties, height_m: parseFloat(f.properties.height) || 0, label: f.properties.height }
     }))
@@ -60,7 +75,7 @@ const MBOARD_DATA = (() => {
 
   const lotSize = {
     type: 'FeatureCollection',
-    features: zoning.features.filter(f => f.properties.lot_size !== 'N/A').map(f => ({
+    features: zoning.features.filter((f) => f.properties.lot_size !== 'N/A').map((f) => ({
       ...f,
       properties: { ...f.properties, lot_m2: parseInt(f.properties.lot_size) || 0, label: f.properties.lot_size }
     }))
@@ -69,12 +84,14 @@ const MBOARD_DATA = (() => {
   const heritage = {
     type: 'FeatureCollection',
     features: [
-      rect(150.904, -33.769, 0.002, 0.0015, { name: 'Blacktown Heritage Cottage', grade: 'Local', year: '1890' }),
-      rect(151.010, -33.815, 0.003, 0.002, { name: 'Parramatta Heritage Precinct', grade: 'State', year: '1810' }),
-      rect(150.890, -33.760, 0.004, 0.003, { name: 'Prospect Conservation Area', grade: 'Local', year: '1920' })
+      rect(150.904, -33.769, 0.002, 0.0015, { name: 'Blacktown Heritage Cottage', grade: 'Local', year: '1890', lga: 'Blacktown' }),
+      rect(151.010, -33.815, 0.003, 0.002, { name: 'Parramatta Heritage Precinct', grade: 'State', year: '1810', lga: 'Parramatta' }),
+      rect(150.890, -33.760, 0.004, 0.003, { name: 'Prospect Conservation Area', grade: 'Local', year: '1920', lga: 'Blacktown' }),
+      rect(150.908, -33.771, 0.002, 0.0015, { name: 'Flushcombe Road Heritage Streetscape', grade: 'Local', year: '1925', lga: 'Blacktown' })
     ]
   };
 
+  /* ── Cadastre & Urbane portfolio ────────────────────────── */
   const parcels = {
     type: 'FeatureCollection',
     features: [
@@ -89,7 +106,7 @@ const MBOARD_DATA = (() => {
 
   const addresses = {
     type: 'FeatureCollection',
-    features: parcels.features.map(f => {
+    features: parcels.features.map((f) => {
       const c = f.geometry.coordinates[0];
       const lng = (c[0][0] + c[2][0]) / 2;
       const lat = (c[0][1] + c[2][1]) / 2;
@@ -105,121 +122,186 @@ const MBOARD_DATA = (() => {
       point(150.9048, -33.7696, { address: '15A Cansdale Street, Blacktown', price: '$580/wk', status: 'Under Application', beds: '2' }),
       point(151.0028, -33.8244, { address: '4508/57-59 Queen Street, Auburn', price: 'Contact Agent', status: 'For Sale', beds: '3' }),
       point(150.9085, -33.7665, { address: '3 Loy Place, Quakers Hill', price: '$750/wk', status: 'For Rent', beds: '4' }),
-      point(150.9025, -33.7711, { address: '13/18 Marcia Street, Toongabbie', price: '$900/wk', status: 'For Rent', beds: '4' })
+      point(150.9025, -33.7711, { address: '13/18 Marcia Street, Toongabbie', price: '$900/wk', status: 'For Rent', beds: '4' }),
+      point(150.855, -33.658, { address: '25 Grantham Street, Grantham Farm', price: '$1,300,000', status: 'Sold (May 2026)', beds: '5' }),
+      point(150.868, -33.768, { address: '12/7 Graham Street, Doonside', price: '$820,000', status: 'Sold (Jun 2026)', beds: '3' }),
+      point(150.725, -33.758, { address: '23/29 Bringelly Road, Kingswood', price: '$820,000', status: 'Sold (May 2026)', beds: '3' })
     ]
   };
 
+  /* ── Environmental constraints (Western Sydney) ─────────── */
   const flood = {
     type: 'FeatureCollection',
     features: [
-      rect(150.915, -33.775, 0.006, 0.004, { category: 'Flood Planning Area', aep: '1% AEP', pmf: false }),
-      rect(150.878, -33.762, 0.005, 0.003, { category: 'Floodway', aep: 'PMF', pmf: true }),
-      rect(151.020, -33.830, 0.008, 0.005, { category: 'Flood Planning Area', aep: '1% AEP', pmf: false })
+      rect(150.915, -33.775, 0.006, 0.004, { category: 'Flood Planning Area', aep: '1% AEP', pmf: false, waterway: 'Blacktown Creek' }),
+      rect(150.878, -33.762, 0.005, 0.003, { category: 'Floodway', aep: 'PMF', pmf: true, waterway: 'Eastern Creek' }),
+      rect(151.020, -33.830, 0.008, 0.005, { category: 'Flood Planning Area', aep: '1% AEP', pmf: false, waterway: 'Parramatta River' }),
+      rect(150.810, -33.720, 0.012, 0.008, { category: 'Flood Planning Area', aep: '1% AEP', pmf: false, waterway: 'South Creek — Marsden Park' }),
+      rect(150.770, -33.770, 0.008, 0.006, { category: 'Overland Flow Path', aep: '1% AEP', pmf: false, waterway: 'South Creek tributary' })
     ]
   };
 
   const bushfire = {
     type: 'FeatureCollection',
     features: [
-      rect(150.940, -33.745, 0.02, 0.015, { category: 'Bush Fire Prone Land', bal: 'BAL-19', vegetation: 'Forest' }),
-      rect(150.860, -33.740, 0.015, 0.012, { category: 'Bush Fire Prone Land', bal: 'BAL-12.5', vegetation: 'Woodland' }),
-      rect(151.080, -33.720, 0.025, 0.018, { category: 'Bush Fire Prone Land', bal: 'BAL-29', vegetation: 'Forest' })
+      rect(150.940, -33.745, 0.020, 0.015, { category: 'Bush Fire Prone Land', bal: 'BAL-19', vegetation: 'Forest', lga: 'Blacktown' }),
+      rect(150.860, -33.740, 0.015, 0.012, { category: 'Bush Fire Prone Land', bal: 'BAL-12.5', vegetation: 'Woodland', lga: 'Blacktown' }),
+      rect(151.080, -33.720, 0.025, 0.018, { category: 'Bush Fire Prone Land', bal: 'BAL-29', vegetation: 'Forest', lga: 'The Hills' }),
+      rect(150.730, -33.720, 0.030, 0.022, { category: 'Bush Fire Prone Land', bal: 'BAL-19', vegetation: 'Cumberland Plain Woodland', lga: 'Penrith' })
     ]
   };
 
   const biodiversity = {
     type: 'FeatureCollection',
     features: [
-      rect(150.925, -33.748, 0.012, 0.01, { category: 'Vegetation Category 2', significance: 'Local' }),
-      rect(150.855, -33.778, 0.01, 0.008, { category: 'Vegetation Category 1', significance: 'Regional' }),
-      rect(151.050, -33.710, 0.015, 0.012, { category: 'Koala Habitat', significance: 'State' })
+      rect(150.925, -33.748, 0.012, 0.010, { category: 'Vegetation Category 2', significance: 'Local', species: 'Cumberland Plain' }),
+      rect(150.855, -33.778, 0.010, 0.008, { category: 'Vegetation Category 1', significance: 'Regional', species: 'Shale gravel transition forest' }),
+      rect(151.050, -33.710, 0.015, 0.012, { category: 'Koala Habitat', significance: 'State', species: 'Koala (endangered population)' }),
+      rect(150.815, -33.725, 0.018, 0.014, { category: 'Riparian Corridor', significance: 'Local', species: 'South Creek riparian zone' })
     ]
   };
 
   const contamination = {
     type: 'FeatureCollection',
     features: [
-      point(150.875, -33.788, { site: 'Former landfill', status: 'Remediation complete', year: '2018' }),
-      point(150.930, -33.795, { site: 'Industrial spill site', status: 'Under management', year: '2022' })
+      point(150.875, -33.788, { site: 'Former landfill', status: 'Remediation complete', year: '2018', register: 'NSW EPA CLM' }),
+      point(150.930, -33.795, { site: 'Industrial spill site', status: 'Under management', year: '2022', register: 'NSW EPA CLM' }),
+      point(150.868, -33.782, { site: 'Prospect industrial legacy', status: 'Monitored', year: '2015', register: 'NSW EPA CLM' })
     ]
   };
 
+  /* ── Demographics from ABS 2021 Census SA2 ──────────────── */
   const population = {
     type: 'FeatureCollection',
-    features: [
-      rect(150.895, -33.775, 0.025, 0.02, { sa2: 'Blacktown - South', pop: 28400, density: 3200, label: '3,200/km²' }),
-      rect(150.920, -33.755, 0.02, 0.015, { sa2: 'Blacktown - North', pop: 22100, density: 2100, label: '2,100/km²' }),
-      rect(151.000, -33.820, 0.03, 0.025, { sa2: 'Parramatta - Central', pop: 35600, density: 4800, label: '4,800/km²' }),
-      rect(150.750, -33.750, 0.035, 0.03, { sa2: 'Penrith - East', pop: 18900, density: 1500, label: '1,500/km²' })
-    ]
+    features: (R?.sa2Regions || []).map((s) =>
+      rect(s.lng, s.lat, s.w, s.h, {
+        sa2: s.sa2, pop: s.pop, density: s.density,
+        label: s.density.toLocaleString() + '/km²', source: s.source
+      })
+    )
   };
 
-  const incomeValues = [72000, 68000, 95000, 61000];
   const income = {
     type: 'FeatureCollection',
-    features: population.features.map((f, i) => ({
-      ...f,
-      properties: { ...f.properties, median_income: incomeValues[i], label: '$' + (incomeValues[i] / 1000) + 'k' }
-    }))
+    features: (R?.sa2Regions || []).map((s) =>
+      rect(s.lng, s.lat, s.w, s.h, {
+        sa2: s.sa2, median_income: s.medianIncome,
+        label: '$' + Math.round(s.medianIncome / 1000) + 'k p.a.', source: s.source
+      })
+    )
   };
 
   const age = {
     type: 'FeatureCollection',
-    features: population.features.map((f, i) => ({
-      ...f,
-      properties: { ...f.properties, median_age: 32 + i * 3, label: (32 + i * 3) + ' years' }
-    }))
+    features: (R?.sa2Regions || []).map((s) =>
+      rect(s.lng, s.lat, s.w, s.h, {
+        sa2: s.sa2, median_age: s.medianAge,
+        label: s.medianAge + ' years', source: s.source
+      })
+    )
   };
 
   const growth = {
     type: 'FeatureCollection',
-    features: population.features.map((f, i) => ({
-      ...f,
-      properties: { ...f.properties, growth_pct: 1.2 + i * 0.8, label: (1.2 + i * 0.8).toFixed(1) + '% p.a.' }
-    }))
+    features: (R?.sa2Regions || []).map((s) =>
+      rect(s.lng, s.lat, s.w, s.h, {
+        sa2: s.sa2, growth_pct: s.growth,
+        label: s.growth.toFixed(1) + '% p.a.', source: s.source
+      })
+    )
   };
 
+  /* ── Transport: researched rail corridors ───────────────── */
   const rail = {
     type: 'FeatureCollection',
-    features: [
-      line([[150.85, -33.75], [150.88, -33.76], [150.91, -33.77], [150.95, -33.78], [151.00, -33.82], [151.05, -33.87]], { name: 'T1 Western Line', operator: 'Sydney Trains' }),
-      line([[150.90, -33.73], [150.92, -33.75], [150.94, -33.77], [150.96, -33.79]], { name: 'T5 Cumberland Line', operator: 'Sydney Trains' }),
-      line([[151.00, -33.80], [151.02, -33.82], [151.05, -33.85], [151.08, -33.88]], { name: 'T2 Inner West', operator: 'Sydney Trains' })
-    ]
+    features: (R?.railLines || []).filter((r) => r.stations).map((r) =>
+      line(stationCoords(r.stations), { name: r.name, operator: r.operator, status: r.status || 'Operational' })
+    )
   };
 
   const metro = {
     type: 'FeatureCollection',
     features: [
-      line([[151.00, -33.82], [151.02, -33.84], [151.04, -33.86]], { name: 'Sydney Metro West (planned)', status: 'Under construction' }),
-      line([[150.91, -33.77], [150.93, -33.78], [150.95, -33.79]], { name: 'Parramatta Light Rail', status: 'Operational' })
+      line(stationCoords(['Parramatta', 'Westmead', 'St Marys']), { name: 'Sydney Metro West', status: 'Under construction', operator: 'Sydney Metro' }),
+      line([[150.910, -33.770], [150.930, -33.780], [150.950, -33.790]], { name: 'Parramatta Light Rail (Stage 1)', status: 'Operational', operator: 'Transport for NSW' })
     ]
+  };
+
+  const stations = {
+    type: 'FeatureCollection',
+    features: (R?.stations || []).map((s) =>
+      point(s.lng, s.lat, {
+        name: s.name, code: s.code, lines: s.lines.join(', '), lga: s.lga,
+        tod: s.tod ? 'Yes' : 'No', lmr: s.lmr ? 'Yes' : 'No',
+        corridor: s.corridor ? 'Mt Druitt–Toongabbie' : ''
+      })
+    )
   };
 
   const employment = {
     type: 'FeatureCollection',
     features: [
-      point(151.05, -33.87, { name: 'Parramatta CBD', jobs: 52000 }),
-      point(150.91, -33.77, { name: 'Blacktown CBD', jobs: 18500 }),
-      point(150.75, -33.75, { name: 'Penrith CBD', jobs: 12000 }),
-      point(151.00, -33.82, { name: 'Olympic Park', jobs: 28000 })
+      point(151.050, -33.870, { name: 'Parramatta CBD', jobs: 52000, lga: 'Parramatta' }),
+      point(150.907, -33.770, { name: 'Blacktown CBD', jobs: 18500, lga: 'Blacktown' }),
+      point(150.697, -33.750, { name: 'Penrith CBD', jobs: 12000, lga: 'Penrith' }),
+      point(151.000, -33.820, { name: 'Olympic Park', jobs: 28000, lga: 'Cumberland' }),
+      point(150.805, -33.715, { name: 'Marsden Park Employment', jobs: 3900, lga: 'Blacktown', note: 'Marsden Park North rezoning' }),
+      point(150.785, -33.935, { name: 'Bradfield City Centre (Aerotropolis)', jobs: 200000, lga: 'Liverpool', note: 'Western Sydney Airport catalyst' })
     ]
   };
 
+  /* ── Strategic planning layers ──────────────────────────── */
   const precincts = {
     type: 'FeatureCollection',
-    features: [
-      rect(150.780, -33.730, 0.04, 0.03, { name: 'Marsden Park Growth Area', dwellings: 12000, status: 'Active' }),
-      rect(150.850, -33.710, 0.035, 0.028, { name: 'Schofields Precinct', dwellings: 8500, status: 'Active' }),
-      rect(150.920, -33.700, 0.03, 0.025, { name: 'Box Hill Release', dwellings: 15000, status: 'Planned' })
-    ]
+    features: (R?.growthPrecincts || []).map((p) =>
+      rect(p.lng, p.lat, p.w, p.h, {
+        name: p.name, lga: p.lga, status: p.status,
+        dwellings: p.dwellings || '—', jobs: p.jobs || '—',
+        note: p.note || ''
+      })
+    )
   };
 
   const tod = {
     type: 'FeatureCollection',
+    features: (R?.stations || []).filter((s) => s.tod).flatMap((s) => [
+      circlePolygon(s.lng, s.lat, 400, 48, { name: s.name + ' TOD (400m)', radius: '400m', policy: 'TOD SEPP', fsr_bonus: 'State controls' }),
+      circlePolygon(s.lng, s.lat, 800, 48, { name: s.name + ' TOD (800m)', radius: '800m', policy: 'TOD Program', fsr_bonus: 'Mixed-use uplift' })
+    ])
+  };
+
+  const lmr = {
+    type: 'FeatureCollection',
+    features: (R?.stations || []).filter((s) => s.lmr).map((s) =>
+      circlePolygon(s.lng, s.lat, 800, 48, {
+        name: s.name + ' LMR Area', radius: '800m', policy: 'LMR Housing SEPP Stage 2',
+        max_storeys: '6', effective: '28 Feb 2025'
+      })
+    )
+  };
+
+  const corridor = {
+    type: 'FeatureCollection',
     features: [
-      rect(150.905, -33.768, 0.008, 0.006, { name: 'Blacktown TOD', radius: '800m', fsr_bonus: '+0.3' }),
-      rect(151.002, -33.824, 0.006, 0.005, { name: 'Auburn TOD', radius: '600m', fsr_bonus: '+0.5' })
+      line(stationCoords(['Mount Druitt', 'Rooty Hill', 'Doonside', 'Blacktown', 'Seven Hills', 'Toongabbie']), {
+        name: 'Mt Druitt–Toongabbie Rail Corridor',
+        dwellings: '50,000 capacity test',
+        lmr_potential: '23,000',
+        status: R?.policies?.corridor?.status || 'Draft'
+      })
+    ]
+  };
+
+  const corridorArea = {
+    type: 'FeatureCollection',
+    features: [
+      rect(150.810, -33.790, 0.155, 0.035, {
+        name: 'Corridor Study Area',
+        area_ha: R?.policies?.corridor?.areaHa || 6524,
+        avg_density: R?.policies?.corridor?.avgDensity || '6 dwellings/ha',
+        council: 'Blacktown City Council',
+        label: '6,524 ha'
+      })
     ]
   };
 
@@ -227,8 +309,39 @@ const MBOARD_DATA = (() => {
     type: 'FeatureCollection',
     features: [
       line([[150.910, -33.760], [150.920, -33.755], [150.930, -33.750], [150.940, -33.748]], { name: 'Blacktown South Rezoning PP', from: 'R2', to: 'R4', status: 'On exhibition' }),
-      line([[150.870, -33.790], [150.880, -33.785], [150.890, -33.780]], { name: 'Prospect Industrial Transition', from: 'IN1', to: 'B6', status: 'Approved' })
+      line([[150.870, -33.790], [150.880, -33.785], [150.890, -33.780]], { name: 'Prospect Industrial Transition', from: 'IN1', to: 'B6', status: 'Approved' }),
+      rect(150.805, -33.715, 0.035, 0.028, { name: 'Marsden Park North Rezoning', from: 'RU4/E3', to: 'E3/R2', status: 'Post-exhibition Jan 2026' })
     ]
+  };
+
+  const lga = {
+    type: 'FeatureCollection',
+    features: [
+      rect(150.750, -33.820, 0.200, 0.120, { name: 'Blacktown', population: '450,000 (2025)', target: '46,000 homes by 2029 (NW Accord)' }),
+      rect(150.980, -33.880, 0.080, 0.070, { name: 'Parramatta', population: '256,000', role: 'Central River City' }),
+      rect(151.000, -33.860, 0.070, 0.060, { name: 'Cumberland', population: '248,000', role: 'Parramatta corridor' }),
+      rect(150.650, -33.780, 0.120, 0.100, { name: 'Penrith', population: '217,000', role: 'Western Parkland City' }),
+      rect(150.900, -33.680, 0.100, 0.080, { name: 'The Hills', population: '198,000', role: 'North West Growth Area' })
+    ]
+  };
+
+  const serviceArea = {
+    type: 'FeatureCollection',
+    features: [
+      rect(150.700, -33.900, 0.380, 0.280, {
+        name: 'Urbane Service Footprint',
+        suburbs: R?.urbane?.serviceSuburbs || 58,
+        corridors: 'Blacktown · Parramatta · Growth · Penrith',
+        hq: '9/18 Third Avenue, Blacktown'
+      })
+    ]
+  };
+
+  const competitors = {
+    type: 'FeatureCollection',
+    features: (R?.urbane?.competitors || []).map((c) =>
+      point(c.lng, c.lat, { name: c.name, address: c.address, sold12Mo: c.sold12Mo || '—' })
+    )
   };
 
   const sourceMap = {
@@ -236,9 +349,10 @@ const MBOARD_DATA = (() => {
     parcels, addresses, listings,
     flood, bushfire, biodiversity, contamination,
     population, income, age, growth,
-    rail, metro, employment,
-    precincts, tod, rezoning
+    rail, metro, stations, employment,
+    precincts, tod, lmr, corridor, 'corridor-area': corridorArea, rezoning,
+    lga, 'service-area': serviceArea, competitors
   };
 
-  return { sourceMap, zoning, parcels, listings };
+  return { sourceMap, zoning, parcels, listings, research: R };
 })();

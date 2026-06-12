@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>M-Board — Australian Spatial Intelligence Portal | Urbane Real Estate</title>
-  <meta name="description" content="M-Board: hybrid 3D globe and planning GIS for Australia — zoning, cadastre, environment, demographics, and site intelligence.">
+  <meta name="description" content="M-Board: NSW spatial intelligence for Greater Western Sydney — TOD, LMR housing, corridor strategy, growth precincts, ABS demographics, and Urbane Real Estate site analysis.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -22,7 +22,7 @@
         <span class="mboard-logo-mark">M</span>
         <div>
           <strong>M-Board</strong>
-          <span>Australian Spatial Intelligence</span>
+          <span>NSW Spatial Intelligence · Greater Western Sydney</span>
         </div>
       </div>
     </div>
@@ -141,10 +141,12 @@
   </footer>
 
   <div class="mboard-quick-nav" aria-label="Quick fly-to locations">
-    <button type="button" data-fly="-33.7689,150.9069,14" title="Blacktown">Blacktown</button>
-    <button type="button" data-fly="-33.8688,151.2093,12" title="Sydney CBD">Sydney</button>
-    <button type="button" data-fly="-33.4250,149.5780,8" title="NSW overview">NSW</button>
-    <button type="button" data-fly="-25.2744,133.7751,5" title="Australia">Australia</button>
+    <button type="button" data-fly="-33.7689,150.9069,14" title="Blacktown CBD & Urbane HQ">Blacktown</button>
+    <button type="button" data-fly="-33.8173,151.0072,13" title="Parramatta CBD">Parramatta</button>
+    <button type="button" data-fly="-33.715,150.805,12" title="Marsden Park growth area">Marsden Park</button>
+    <button type="button" data-fly="-33.7667,150.8201,13" title="Mt Druitt–Toongabbie corridor">Corridor</button>
+    <button type="button" data-fly="-33.750,150.920,10" title="Greater Western Sydney">GWS</button>
+    <button type="button" data-fly="-33.4250,149.5780,7" title="NSW state view">NSW</button>
   </div>
 
   <div class="mboard-modal" id="workbenchModal" hidden>
@@ -201,17 +203,30 @@
             </ul>
           </div>
           <div>
-            <h4>Data Sources</h4>
+            <h4>NSW Research (June 2026)</h4>
             <ul>
-              <li>NSW Planning Portal, VicPlan, QLD Globe, WA SLIP</li>
-              <li>Australian Bureau of Statistics (ABS)</li>
-              <li>OpenStreetMap, Esri World Imagery</li>
-              <li>Sample cadastre &amp; zoning for demonstration</li>
+              <li>ABS Census 2021 — SA2 demographics for Western Sydney</li>
+              <li>Housing SEPP 2021 — TOD &amp; LMR policy buffers</li>
+              <li>Blacktown Mt Druitt–Toongabbie Corridor Strategy</li>
+              <li>National Housing Accord — 46,000 NW Sydney target</li>
+              <li>Marsden Park North, Schofields, Box Hill growth precincts</li>
+              <li>Urbane Real Estate service footprint &amp; competitor map</li>
             </ul>
           </div>
         </div>
         <p class="mboard-disclaimer">M-Board integrates open government data and demonstration layers. For authoritative planning determinations, consult your local council and certified planners. Inspired by <a href="https://meconemosaic.au/" target="_blank" rel="noopener">Mecone Mosaic</a>.</p>
       </div>
+    </div>
+  </div>
+
+  <div class="mboard-modal" id="nswResearchModal" hidden>
+    <div class="mboard-modal-backdrop" data-close-modal></div>
+    <div class="mboard-modal-content mboard-modal-content--wide" role="dialog" aria-labelledby="nswResearchTitle">
+      <header class="mboard-modal-header">
+        <h3 id="nswResearchTitle">NSW Spatial Research Summary</h3>
+        <button type="button" class="mboard-icon-btn" data-close-modal aria-label="Close">×</button>
+      </header>
+      <div class="mboard-modal-body mboard-help" id="nswResearchBody"></div>
     </div>
   </div>
 
@@ -223,6 +238,7 @@
   <link href="https://cdn.jsdelivr.net/npm/cesium@1.122/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script src="js/m-board-config.js"></script>
+  <script src="js/m-board-nsw-research.js"></script>
   <script src="js/m-board-data.js"></script>
   <script src="js/m-board.js"></script>
 </body>

@@ -142,19 +142,33 @@ const MBOARD_CONFIG = {
       name: 'Transport & Infrastructure',
       color: '#06b6d4',
       layers: [
-        { id: 'rail', name: 'Rail Network', source: 'rail', type: 'line', defaultOn: false, paint: { 'line-color': '#06b6d4', 'line-width': 3 } },
-        { id: 'metro', name: 'Metro & Light Rail', source: 'metro', type: 'line', defaultOn: false, paint: { 'line-color': '#8b5cf6', 'line-width': 3 } },
+        { id: 'rail', name: 'Rail Network (T1/T2/T5/Richmond)', source: 'rail', type: 'line', defaultOn: true, paint: { 'line-color': '#06b6d4', 'line-width': 3 } },
+        { id: 'metro', name: 'Metro West & Light Rail', source: 'metro', type: 'line', defaultOn: false, paint: { 'line-color': '#8b5cf6', 'line-width': 3, 'line-dasharray': [3, 2] } },
+        { id: 'stations', name: 'Rail Stations (18 hubs)', source: 'stations', type: 'circle', defaultOn: true, paint: { 'circle-radius': 6, 'circle-color': '#0e7490', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' } },
         { id: 'employment', name: 'Employment Hubs', source: 'employment', type: 'circle', defaultOn: false, paint: { 'circle-radius': 10, 'circle-color': '#0891b2', 'circle-opacity': 0.7 } }
       ]
     },
     {
       id: 'strategic',
-      name: 'Strategic Planning',
+      name: 'NSW Strategic Planning',
       color: '#f59e0b',
       layers: [
-        { id: 'precincts', name: 'Growth Precincts', source: 'precincts', type: 'fill', defaultOn: false, paint: { 'fill-color': '#f59e0b', 'fill-opacity': 0.35 } },
-        { id: 'tod', name: 'Transport Oriented Development', source: 'tod', type: 'fill', defaultOn: false, paint: { 'fill-color': '#eab308', 'fill-opacity': 0.3 } },
+        { id: 'precincts', name: 'Growth Precincts (NWGA)', source: 'precincts', type: 'fill', defaultOn: false, paint: { 'fill-color': '#f59e0b', 'fill-opacity': 0.35 } },
+        { id: 'tod', name: 'TOD Program (400m/800m)', source: 'tod', type: 'fill', defaultOn: false, paint: { 'fill-color': '#eab308', 'fill-opacity': 0.25 } },
+        { id: 'lmr', name: 'Low & Mid-Rise Housing (800m)', source: 'lmr', type: 'fill', defaultOn: false, paint: { 'fill-color': '#f97316', 'fill-opacity': 0.22 } },
+        { id: 'corridor', name: 'Mt Druitt–Toongabbie Corridor', source: 'corridor', type: 'line', defaultOn: false, paint: { 'line-color': '#dc2626', 'line-width': 4 } },
+        { id: 'corridor-area', name: 'Corridor Study Area (6,524 ha)', source: 'corridor-area', type: 'fill', defaultOn: false, paint: { 'fill-color': '#dc2626', 'fill-opacity': 0.12 } },
         { id: 'rezoning', name: 'Proposed Rezoning', source: 'rezoning', type: 'line', defaultOn: false, paint: { 'line-color': '#f43f5e', 'line-width': 2, 'line-dasharray': [4, 2] } }
+      ]
+    },
+    {
+      id: 'nsw',
+      name: 'NSW & Urbane Intelligence',
+      color: '#ec4899',
+      layers: [
+        { id: 'lga', name: 'LGA Boundaries (Western Sydney)', source: 'lga', type: 'fill', defaultOn: false, paint: { 'fill-color': '#ec4899', 'fill-opacity': 0.12 } },
+        { id: 'service-area', name: 'Urbane Service Footprint', source: 'service-area', type: 'fill', defaultOn: false, paint: { 'fill-color': '#ec4899', 'fill-opacity': 0.18, 'fill-outline-color': '#ec4899' } },
+        { id: 'competitors', name: 'Competitor Agencies', source: 'competitors', type: 'circle', defaultOn: false, paint: { 'circle-radius': 7, 'circle-color': '#be185d', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' } }
       ]
     }
   ],
@@ -172,7 +186,7 @@ const MBOARD_CONFIG = {
   },
 
   jurisdictions: {
-    NSW: { center: [151.0, -33.5], zoom: 8, label: 'New South Wales' },
+    NSW: { center: [150.92, -33.75], zoom: 10, label: 'New South Wales — Greater Western Sydney' },
     VIC: { center: [144.5, -37.5], zoom: 7, label: 'Victoria' },
     QLD: { center: [145.5, -22.5], zoom: 6, label: 'Queensland' },
     WA: { center: [121.5, -26.0], zoom: 5, label: 'Western Australia' },
